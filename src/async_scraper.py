@@ -5,6 +5,7 @@ import asyncio
 import logging
 import aiohttp
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from src.db import upsert_section, init_db
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 BASE_RAW_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "storage", "raw", "bdlaws"))
 PROCESSED_JSON_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "storage", "processed", "sections.json"))
 BDLAWS_BASE_URL = "http://bdlaws.minlaw.gov.bd"
+CHRONOLOGICAL_INDEX_URL = "http://bdlaws.minlaw.gov.bd/laws-of-bangladesh-chronological-index.html"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -29,29 +31,34 @@ class ProductionAsyncScraper:
     async def fetch_page(self, session, url: str) -> str:
         async with self.semaphore:
             try:
-                async with session.get(url, headers=HEADERS, timeout=12) as response:
+                clean_url = urljoin(BDLAWS_BASE_URL, url)
+                async with session.get(clean_url, headers=HEADERS, timeout=12) as response:
                     if response.status == 200:
                         return await response.text()
             except Exception as e:
                 logger.warning(f"Error fetching {url}: {e}")
             return ""
 
-    def parse_act_index(self, html_content: str) -> list:
+    def parse_chronological_index(self, html_content: str) -> list:
         acts = []
+        seen_act_ids = set()
         soup = BeautifulSoup(html_content, "html.parser")
         for link in soup.find_all("a", href=True):
             href = link['href']
-            if "/act-" in href or "/volume-" in href:
+            m = re.search(r'act-(\d+)\.html', href)
+            if m:
+                act_id = int(m.group(1))
                 title = link.get_text(strip=True)
-                match = re.search(r'act-(\d+)', href)
-                act_id = int(match.group(1)) if match else len(acts) + 1
-                
-                full_url = href if href.startswith("http") else f"{BDLAWS_BASE_URL}/{href}"
-                acts.append({
-                    "act_id": act_id,
-                    "title": title,
-                    "url": full_url
-                })
+                if not title or len(title) < 3 or title in seen_act_ids:
+                    continue
+                if act_id not in seen_act_ids:
+                    seen_act_ids.add(act_id)
+                    full_url = urljoin(BDLAWS_BASE_URL, href)
+                    acts.append({
+                        "act_id": act_id,
+                        "title": title,
+                        "url": full_url
+                    })
         return acts
 
     async def scrape_act_sections(self, session, act: dict, idx: int, total: int):
@@ -69,49 +76,56 @@ class ProductionAsyncScraper:
         sec_links = []
         for link in soup.find_all("a", href=True):
             href = link['href']
-            if f"/act-{act_id}/section-" in href or "/section-" in href:
-                full_sec_url = href if href.startswith("http") else f"{BDLAWS_BASE_URL}/{href}"
+            if "section-" in href:
+                full_sec_url = urljoin(BDLAWS_BASE_URL, href)
                 match = re.search(r'section-(\d+)', href)
-                sec_num = match.group(1) if match else "1"
-                sec_links.append({"sec_num": sec_num, "url": full_sec_url})
+                sec_id = match.group(1) if match else "1"
+                sec_links.append({"sec_id": sec_id, "url": full_sec_url})
+
+        # Remove duplicate section URLs
+        unique_sec_links = list({sec["url"]: sec for sec in sec_links}.values())
+
+        if not unique_sec_links:
+            logger.info(f"Act #{act_id} has 0 section links.")
+            return
 
         # Process each section
         saved_count = 0
-        for sec in sec_links:
-            sec_num = sec["sec_num"]
+        for sec in unique_sec_links:
+            sec_id = sec["sec_id"]
             sec_url = sec["url"]
             sec_html = await self.fetch_page(session, sec_url)
             if not sec_html:
                 continue
 
             # 1. Preserve Raw HTML file for auditability
-            raw_file_path = os.path.join(act_dir, f"section_{sec_num}.html")
+            raw_file_path = os.path.join(act_dir, f"section_{sec_id}.html")
             with open(raw_file_path, "w", encoding="utf-8") as f:
                 f.write(sec_html)
 
             # 2. Extract clean ground-truth text
             sec_soup = BeautifulSoup(sec_html, "html.parser")
             title_el = sec_soup.find("h4") or sec_soup.find("h3") or sec_soup.find("title")
-            title_bn = title_el.get_text(strip=True) if title_el else f"ধারা {sec_num}"
+            title_bn = title_el.get_text(strip=True) if title_el else f"ধারা {sec_id}"
 
             content_el = sec_soup.find("div", class_="section-details") or sec_soup.find("body")
             content_bn = content_el.get_text(separator="\n", strip=True) if content_el else ""
 
-            easy_exp_bn = f"অফিশিয়াল bdlaws থেকে সরাসরি সংগৃহীত {act['title']}-এর {sec_num} ধারা।"
+            easy_exp_bn = f"অফিশিয়াল bdlaws থেকে সরাসরি সংগৃহীত {act['title']}-এর {sec_id} ধারা।"
 
             sec_record = {
                 "act_id": act_id,
                 "act_name_en": act["title"],
                 "act_name_bn": act["title"],
                 "category": "Bangladesh Laws (বাংলাদেশ আইন)",
-                "section_number": str(sec_num),
-                "section_title_en": f"Section {sec_num}",
+                "section_number": str(sec_id),
+                "section_title_en": f"Section {sec_id}",
                 "section_title_bn": title_bn,
                 "content_en": content_bn,
                 "content_bn": content_bn,
                 "easy_explanation_bn": easy_exp_bn,
                 "source_url": sec_url,
-                "keywords": [str(sec_num), act["title"]],
+                "keywords": [str(sec_id), act["title"]],
                 "past_court_cases": []
             }
 
@@ -124,8 +138,8 @@ class ProductionAsyncScraper:
                 act_name_en=act["title"],
                 act_name_bn=act["title"],
                 category="General Law",
-                sec_num=str(sec_num),
-                title_en=f"Section {sec_num}",
+                sec_num=str(sec_id),
+                title_en=f"Section {sec_id}",
                 title_bn=title_bn,
                 content_en=content_bn,
                 content_bn=content_bn,
@@ -140,20 +154,13 @@ class ProductionAsyncScraper:
         init_db()
 
         async with aiohttp.ClientSession() as session:
-            target_urls = [
-                f"{BDLAWS_BASE_URL}/laws-of-bangladesh.html",
-                f"{BDLAWS_BASE_URL}/act-list-all.html",
-                "https://bdlaws.minlaw.gov.bd"
-            ]
-
+            logger.info(f"Fetching full Chronological Index from {CHRONOLOGICAL_INDEX_URL}...")
+            main_html = await self.fetch_page(session, CHRONOLOGICAL_INDEX_URL)
+            
             acts = []
-            for url in target_urls:
-                main_html = await self.fetch_page(session, url)
-                if main_html:
-                    acts = self.parse_act_index(main_html)
-                    if acts:
-                        logger.info(f"Successfully scraped {len(acts)} Act links from {url}!")
-                        break
+            if main_html:
+                acts = self.parse_chronological_index(main_html)
+                logger.info(f"Successfully discovered {len(acts)} Acts on official bdlaws portal!")
 
             if not acts:
                 logger.warning("Could not fetch live index directly. Initializing seed catalog index.")
