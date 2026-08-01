@@ -16,9 +16,9 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1")
 class LLMBengaliExplainer:
     """
     Ground-Truth Legal Decision Explainer with Groq Llama 3.3 70B Integration & Strict Safety Rules.
+    - Zero Truncation (Max Tokens = 2000).
     - Zero Hallucinated Case Law.
     - Zero Fake Percentage Scores.
-    - Ground-Truth Rule Engine Fallback.
     """
 
     def __init__(self, provider: str = LLM_PROVIDER):
@@ -27,7 +27,7 @@ class LLMBengaliExplainer:
 
     def _call_llama_groq(self, act_bn: str, sec_num: str, content_bn: str, query: str) -> str:
         """
-        Calls Groq API (Llama 3.3 70B / Llama 3.1) for 500+ token/sec execution with ZERO VPS RAM usage.
+        Calls Groq API (Llama 3.3 70B) with 2000 max_tokens to prevent Bengali token truncation.
         """
         api_key = os.getenv("GROQ_API_KEY") or GROQ_API_KEY
         if not api_key:
@@ -41,8 +41,9 @@ class LLMBengaliExplainer:
             }
             system_prompt = (
                 "You are an expert Bangladesh Legal Assistant. Your task is to explain the provided statutory law text "
-                "in simple, conversational, empathetic Bengali for an ordinary citizen. "
-                "CRITICAL RULES: Do NOT invent fake court case names or legal precedents. Do NOT generate arbitrary win percentage scores. "
+                "in simple, complete, conversational, empathetic Bengali for an ordinary citizen. "
+                "CRITICAL RULES: Always finish your sentences completely. Do NOT cut off mid-sentence. "
+                "Do NOT invent fake court case names or legal precedents. Do NOT generate arbitrary win percentage scores. "
                 "Base your response ONLY on the provided ground-truth statutory law text."
             )
             user_prompt = (
@@ -50,10 +51,9 @@ class LLMBengaliExplainer:
                 f"ধারা নম্বর: {sec_num}\n"
                 f"অফিশিয়াল আইনের হুবহু টেক্সট: \"{content_bn}\"\n\n"
                 f"ব্যবহারকারীর প্রশ্ন: \"{query}\"\n\n"
-                f"অনুগ্রহ করে উপরের অফিশিয়াল আইনের ভিত্তিতে ব্যবহারকারীর প্রশ্নের একটি সহজ, স্পষ্ট ও ব্যবহারিক বাংলা ব্যাখ্যা দিন।"
+                f"অনুগ্রহ করে উপরের অফিশিয়াল আইনের ভিত্তিতে ব্যবহারকারীর প্রশ্নের একটি সংক্ষিপ্ত, স্পষ্ট, ও সম্পূর্ণ বাংলা ব্যাখ্যা দিন। বাক্যটি পূর্ণাঙ্গভাবে শেষ করুন।"
             )
             
-            # Supported Groq models: llama-3.3-70b-versatile, llama3-70b-8192, llama-3.1-8b-instant
             for model_name in [GROQ_MODEL, "llama-3.3-70b-versatile", "llama3-70b-8192", "llama-3.1-8b-instant"]:
                 payload = {
                     "model": model_name,
@@ -62,18 +62,18 @@ class LLMBengaliExplainer:
                         {"role": "user", "content": user_prompt}
                     ],
                     "temperature": 0.2,
-                    "max_tokens": 500
+                    "max_tokens": 2000
                 }
                 response = requests.post(
                     "https://api.groq.com/openai/v1/chat/completions",
                     headers=headers,
                     json=payload,
-                    timeout=6
+                    timeout=8
                 )
                 if response.status_code == 200:
                     result = response.json()
                     explanation = result["choices"][0]["message"]["content"].strip()
-                    logger.info(f"Successfully generated Groq ({model_name}) explanation ({len(explanation)} chars).")
+                    logger.info(f"Successfully generated Groq ({model_name}) complete explanation ({len(explanation)} chars).")
                     return explanation
                 else:
                     logger.warning(f"Groq API model {model_name} returned status code {response.status_code}: {response.text}")
@@ -138,7 +138,7 @@ class LLMBengaliExplainer:
               <p>আপনার প্রশ্ন: <strong>"{query}"</strong></p>
               <p>সঠিক আইনি অনুচ্ছেদ ছাড়া অনুমানভিত্তিক তথ্য দেওয়া বিপজ্জনক। ভুল ধারায় মামলা দায়ের করলে মামলা খারিজ হয়ে যাওয়ার ঝুঁকি থাকে।</p>
               <div class="highlight-box">
-                <p><strong>পরামর্শ:</strong> বাংলাদেশ বার কাউন্সিলের নিবন্ধিত আইনজীবীর সরাসরি সহায়তা নিন অথবা জাতীয় আইনি সহায়তা সংস্থা (NLASO - ১৬৪ ৩০) তে যোগাযোগ করুন।</p>
+                <p><strong>পরামর্শ:</strong> বাংলাদেশ বার কাউন্সিলের নিবন্ধিত আইনজীবীর সরাসরি সহায়তা নিন অথবা জাতীয় আইনি সহায়তা সংস্থা (NLASO - ১৬৪৩০) তে যোগাযোগ করুন।</p>
               </div>
             </div>"""
           }
