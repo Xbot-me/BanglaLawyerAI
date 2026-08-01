@@ -47,6 +47,12 @@ class PurePythonNgramVectorizer:
         return ngrams
 
     def fit_transform(self, corpus_texts):
+        if not corpus_texts:
+            self.vocab = {}
+            self.idf = {}
+            self.doc_vectors = np.zeros((0, 1), dtype=np.float32)
+            return self.doc_vectors
+
         doc_ngrams_list = [self._get_ngrams(text) for text in corpus_texts]
         df = {}
         N = len(corpus_texts)
@@ -59,7 +65,7 @@ class PurePythonNgramVectorizer:
         self.vocab = {ng: idx for idx, ng in enumerate(sorted(df.keys()))}
         self.idf = {ng: math.log((N + 1) / (df[ng] + 1)) + 1.0 for ng in df}
         
-        vocab_size = len(self.vocab)
+        vocab_size = max(len(self.vocab), 1)
         vectors = np.zeros((N, vocab_size), dtype=np.float32)
         
         for d_idx, doc_ngrams in enumerate(doc_ngrams_list):
@@ -78,8 +84,11 @@ class PurePythonNgramVectorizer:
 
     def transform(self, text):
         ngrams = self._get_ngrams(text)
-        vocab_size = len(self.vocab)
+        vocab_size = max(len(self.vocab), 1)
         vec = np.zeros((1, vocab_size), dtype=np.float32)
+        if not self.vocab:
+            return vec
+
         counts = {}
         for ng in ngrams:
             counts[ng] = counts.get(ng, 0) + 1
@@ -104,9 +113,26 @@ class LegalIndexer:
     def load_documents(self, json_path=None):
         if json_path is None:
             json_path = os.path.join(PROCESSED_DIR, "sections.json")
+
+        if not os.path.exists(json_path):
+            logger.warning(f"File {json_path} not found. Bootstrapping initial section seed dataset...")
+            try:
+                from src.scraper import fetch_and_preserve_raw
+                from src.parser import parse_raw_documents
+                fetch_and_preserve_raw()
+                self.documents = parse_raw_documents()
+                return self.documents
+            except Exception as e:
+                logger.error(f"Error bootstrapping section seed dataset: {e}")
+                self.documents = []
+                return self.documents
             
-        with open(json_path, "r", encoding="utf-8") as f:
-            self.documents = json.load(f)
+        try:
+            with open(json_path, "r", encoding="utf-8") as f:
+                self.documents = json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading {json_path}: {e}")
+            self.documents = []
             
         logger.info(f"Loaded {len(self.documents)} documents for indexing.")
         return self.documents
@@ -126,9 +152,12 @@ class LegalIndexer:
 
     def build_bm25_index(self):
         corpus_tokens = []
+        if not self.documents:
+            self.bm25 = BM25Okapi([["empty"]])
+            return
+
         for doc in self.documents:
-            # Include section number explicitly and content keywords
-            text = f"{doc['section_number']} धारा {doc['section_number']} {doc['section_title_bn']} {doc['section_title_en']} {doc['content_bn']} {doc['content_en']} {' '.join(doc['keywords'])}"
+            text = f"{doc['section_number']} धारा {doc['section_number']} {doc['section_title_bn']} {doc['section_title_en']} {doc['content_bn']} {doc['content_en']} {' '.join(doc.get('keywords', []))}"
             tokens = self._tokenize(text, remove_stopwords=True)
             corpus_tokens.append(tokens)
             
@@ -137,7 +166,11 @@ class LegalIndexer:
 
     def build_vector_index(self):
         os.makedirs(EMBEDDINGS_DIR, exist_ok=True)
-        raw_corpus = [f"{doc['section_number']} {doc['section_title_bn']} {doc['content_bn']} {doc['content_en']} {' '.join(doc['keywords'])}" for doc in self.documents]
+        if not self.documents:
+            self.doc_embeddings = np.zeros((0, 1), dtype=np.float32)
+            return
+
+        raw_corpus = [f"{doc['section_number']} {doc['section_title_bn']} {doc['content_bn']} {doc['content_en']} {' '.join(doc.get('keywords', []))}" for doc in self.documents]
         self.doc_embeddings = self.vectorizer.fit_transform(raw_corpus)
         logger.info(f"Pure Python Multilingual Vector Index constructed. Matrix Shape: {self.doc_embeddings.shape}")
 
