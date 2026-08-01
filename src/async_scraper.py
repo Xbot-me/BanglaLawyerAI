@@ -21,6 +21,12 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 }
 
+# Matches the real statutory section number embedded at the start of the section body text,
+# e.g. "11. The word person includes..." or "420A. Cheating and dishonestly inducing..."
+# NOTE: the URL's "section-XXXX" number is an internal row id, NOT the statutory section number.
+SECTION_NUMBER_RE = re.compile(r'^\s*(\d+[A-Za-z]*)\.\s*(.*)', re.DOTALL)
+
+
 class ProductionAsyncScraper:
     def __init__(self, max_concurrent: int = 5):
         self.semaphore = asyncio.Semaphore(max_concurrent)
@@ -34,7 +40,12 @@ class ProductionAsyncScraper:
                 clean_url = urljoin(BDLAWS_BASE_URL, url)
                 async with session.get(clean_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=8)) as response:
                     if response.status == 200:
-                        return await response.text()
+                        raw_bytes = await response.read()
+                        # bdlaws' HTTP header claims charset=UTF-16, but the page's own
+                        # <meta charset="utf-8"> and actual byte content are UTF-8. Trusting
+                        # the header (as aiohttp's .text() does by default) corrupts every
+                        # non-ASCII (i.e. every Bengali) character. Decode explicitly instead.
+                        return raw_bytes.decode("utf-8", errors="replace")
             except Exception as e:
                 logger.debug(f"Timeout/Error fetching {url}: {e}")
             return ""
@@ -45,7 +56,8 @@ class ProductionAsyncScraper:
         soup = BeautifulSoup(html_content, "html.parser")
         for link in soup.find_all("a", href=True):
             href = link['href']
-            m = re.search(r'act-(\d+)\.html', href)
+            # Real act pages are served at /act-details-<id>.html
+            m = re.search(r'act-details-(\d+)\.html', href)
             if m:
                 act_id = int(m.group(1))
                 title = link.get_text(strip=True)
@@ -88,7 +100,6 @@ class ProductionAsyncScraper:
             logger.info(f"[{idx}/{total}] Act #{act_id} ({act['title'][:30]}) has 0 section links.")
             return
 
-        # Process each section with real-time progress logging
         saved_count = 0
         for sec in unique_sec_links:
             sec_id = sec["sec_id"]
@@ -97,55 +108,76 @@ class ProductionAsyncScraper:
             if not sec_html:
                 continue
 
-            # 1. Preserve Raw HTML file for auditability
+            # 1. Preserve raw HTML for auditability (now correctly UTF-8 decoded)
             raw_file_path = os.path.join(act_dir, f"section_{sec_id}.html")
             with open(raw_file_path, "w", encoding="utf-8") as f:
                 f.write(sec_html)
 
-            # 2. Extract clean ground-truth text
+            # 2. Extract clean ground-truth text using the REAL page structure
             sec_soup = BeautifulSoup(sec_html, "html.parser")
-            title_el = sec_soup.find("h4") or sec_soup.find("h3") or sec_soup.find("title")
-            title_bn = title_el.get_text(strip=True) if title_el else f"ধারা {sec_id}"
 
-            content_el = sec_soup.find("div", class_="section-details") or sec_soup.find("body")
-            content_bn = content_el.get_text(separator="\n", strip=True) if content_el else ""
+            head_el = sec_soup.find("div", class_="txt-head")
+            details_el = sec_soup.find("div", id="sec-dec") or sec_soup.find("div", class_="txt-details")
 
-            easy_exp_bn = f"অফিশিয়াল bdlaws থেকে সরাসরি সংগৃহীত {act['title']}-এর {sec_id} ধারা।"
+            title_bn = head_el.get_text(strip=True) if head_el else ""
+            raw_content = details_el.get_text(separator=" ", strip=True) if details_el else ""
+
+            if not raw_content:
+                # No real section content found on this page (nav/junk/blank page) - skip it
+                # rather than storing garbage.
+                logger.debug(f"Skipping {sec_url}: no section content found (likely non-section page).")
+                continue
+
+            m = SECTION_NUMBER_RE.match(raw_content)
+            if m:
+                real_sec_num = m.group(1)
+                content_bn = m.group(2).strip()
+            else:
+                real_sec_num = sec_id  # fallback only if the expected pattern isn't found
+                content_bn = raw_content
+
+            chapter_no_el = sec_soup.find("p", class_="act-chapter-no")
+            chapter_title_el = sec_soup.find("p", class_="act-chapter-name")
+            chapter_no = chapter_no_el.get_text(strip=True) if chapter_no_el else ""
+            chapter_title = chapter_title_el.get_text(strip=True) if chapter_title_el else ""
+
+            easy_exp_bn = f"অফিশিয়াল bdlaws থেকে সরাসরি সংগৃহীত {act['title']}-এর {real_sec_num} ধারা।"
 
             sec_record = {
                 "act_id": act_id,
                 "act_name_en": act["title"],
                 "act_name_bn": act["title"],
                 "category": "Bangladesh Laws (বাংলাদেশ আইন)",
-                "section_number": str(sec_id),
-                "section_title_en": f"Section {sec_id}",
+                "chapter_number": chapter_no,
+                "chapter_title": chapter_title,
+                "section_number": str(real_sec_num),
+                "section_title_en": f"Section {real_sec_num}",
                 "section_title_bn": title_bn,
                 "content_en": content_bn,
                 "content_bn": content_bn,
                 "easy_explanation_bn": easy_exp_bn,
                 "source_url": sec_url,
-                "keywords": [str(sec_id), act["title"]],
+                "keywords": [str(real_sec_num), act["title"]],
                 "past_court_cases": []
             }
 
             self.scraped_sections.append(sec_record)
             saved_count += 1
-            
-            # Upsert into PostgreSQL if database is active
+
             upsert_section(
                 act_id=act_id,
                 act_name_en=act["title"],
                 act_name_bn=act["title"],
                 category="General Law",
-                sec_num=str(sec_id),
-                title_en=f"Section {sec_id}",
+                sec_num=str(real_sec_num),
+                title_en=f"Section {real_sec_num}",
                 title_bn=title_bn,
                 content_en=content_bn,
                 content_bn=content_bn,
                 easy_exp_bn=easy_exp_bn,
                 url=sec_url
             )
-            
+
         logger.info(f"[{idx}/{total}] Saved {saved_count} sections for Act #{act_id} ({act['title'][:30]}) -> Total in DB: {len(self.scraped_sections)}")
 
     async def run_full_pipeline(self, limit_acts: int = None, batch_size: int = 5):
@@ -155,7 +187,7 @@ class ProductionAsyncScraper:
         async with aiohttp.ClientSession() as session:
             logger.info(f"Fetching full Chronological Index from {CHRONOLOGICAL_INDEX_URL}...")
             main_html = await self.fetch_page(session, CHRONOLOGICAL_INDEX_URL)
-            
+
             acts = []
             if main_html:
                 acts = self.parse_chronological_index(main_html)
@@ -164,26 +196,25 @@ class ProductionAsyncScraper:
             if not acts:
                 logger.warning("Could not fetch live index directly. Initializing seed catalog index.")
                 acts = [
-                    {"act_id": 11, "title": "The Penal Code, 1860", "url": f"{BDLAWS_BASE_URL}/act-11.html"},
-                    {"act_id": 26, "title": "The Negotiable Instruments Act, 1881", "url": f"{BDLAWS_BASE_URL}/act-26.html"},
-                    {"act_id": 42, "title": "The Bangladesh Labour Act, 2006", "url": f"{BDLAWS_BASE_URL}/act-42.html"}
+                    {"act_id": 11, "title": "The Penal Code, 1860", "url": f"{BDLAWS_BASE_URL}/act-details-11.html"},
+                    {"act_id": 26, "title": "The Negotiable Instruments Act, 1881", "url": f"{BDLAWS_BASE_URL}/act-details-26.html"},
+                    {"act_id": 42, "title": "The Bangladesh Labour Act, 2006", "url": f"{BDLAWS_BASE_URL}/act-details-42.html"}
                 ]
 
             target_acts = acts[:limit_acts] if limit_acts else acts
             total_acts = len(target_acts)
-            
-            # Batch execution so government server never hangs or drops connections
+
             for i in range(0, total_acts, batch_size):
                 batch = target_acts[i:i+batch_size]
                 tasks = [self.scrape_act_sections(session, act, i+j+1, total_acts) for j, act in enumerate(batch)]
                 await asyncio.gather(*tasks)
 
-        # Write accumulated sections to JSON database
         if self.scraped_sections:
             with open(PROCESSED_JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump(self.scraped_sections, f, ensure_ascii=False, indent=2)
             logger.info(f"Saved total {len(self.scraped_sections)} scraped sections to {PROCESSED_JSON_PATH}")
 
+
 if __name__ == "__main__":
     scraper = ProductionAsyncScraper(max_concurrent=5)
-    asyncio.run(scraper.run_full_pipeline(limit_acts=None, batch_size=5))
+    asyncio.run(scraper.run_full_pipeline(limit_acts=2, batch_size=5))
