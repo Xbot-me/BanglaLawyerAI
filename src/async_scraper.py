@@ -56,8 +56,9 @@ class ProductionAsyncScraper:
         soup = BeautifulSoup(html_content, "html.parser")
         for link in soup.find_all("a", href=True):
             href = link['href']
-            # Real act pages are served at /act-details-<id>.html
-            m = re.search(r'act-details-(\d+)\.html', href)
+            # Real act section-index pages are served at /act-<id>.html
+            # (confirmed directly from a live fetched page's own "[Section Index]" link)
+            m = re.search(r'/act-(\d+)\.html', href)
             if m:
                 act_id = int(m.group(1))
                 title = link.get_text(strip=True)
@@ -196,9 +197,9 @@ class ProductionAsyncScraper:
             if not acts:
                 logger.warning("Could not fetch live index directly. Initializing seed catalog index.")
                 acts = [
-                    {"act_id": 11, "title": "The Penal Code, 1860", "url": f"{BDLAWS_BASE_URL}/act-details-11.html"},
-                    {"act_id": 26, "title": "The Negotiable Instruments Act, 1881", "url": f"{BDLAWS_BASE_URL}/act-details-26.html"},
-                    {"act_id": 42, "title": "The Bangladesh Labour Act, 2006", "url": f"{BDLAWS_BASE_URL}/act-details-42.html"}
+                    {"act_id": 11, "title": "The Penal Code, 1860", "url": f"{BDLAWS_BASE_URL}/act-11.html"},
+                    {"act_id": 26, "title": "The Negotiable Instruments Act, 1881", "url": f"{BDLAWS_BASE_URL}/act-26.html"},
+                    {"act_id": 42, "title": "The Bangladesh Labour Act, 2006", "url": f"{BDLAWS_BASE_URL}/act-42.html"}
                 ]
 
             target_acts = acts[:limit_acts] if limit_acts else acts
