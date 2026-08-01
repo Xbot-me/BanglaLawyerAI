@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>বাংলাদেশ আইনি প্ল্যাটফর্ম — Bangladesh Legal Knowledge Assistant</title>
+    <meta name="description" content="বাংলাদেশ আইন ও দণ্ডবিধির অফিশিয়াল ধারার সহজ বাংলা নির্দেশিকা ও আইনি সাহায্য প্ল্যাটফর্ম।">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Banner Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo-group">
+                    <div class="logo-badge" aria-hidden="true">⚖️</div>
+                    <div>
+                        <h1 class="app-title">বাংলাদেশ আইনি প্ল্যাটফর্ম</h1>
+                        <p class="app-subtitle">গণপ্রজাতন্ত্রী বাংলাদেশের আইনের নির্ভরযোগ্য তথ্য ও নির্দেশিকা</p>
+                    </div>
+                </div>
+                <div class="header-badges">
+                    <span class="trust-badge">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        অফিশিয়াল bdlaws ভিত্তিক
+                    </span>
+                    <span class="trust-badge llama">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"/></svg>
+                        Groq Llama 3.3 70B AI
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tab Navigation Bar -->
+            <div class="nav-tabs" role="tablist">
+                <button class="tab-btn active" role="tab" id="tab-assistant-btn" aria-selected="true" aria-controls="tab-assistant">
+                    🤖 AI আইনি সহকারী
+                </button>
+                <button class="tab-btn" role="tab" id="tab-explorer-btn" aria-selected="false" aria-controls="tab-explorer">
+                    📚 আইন ব্রাউজার (Explore Laws)
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- TAB 1: AI Assistant -->
+            <section id="tab-assistant" class="tab-content active" role="tabpanel" aria-labelledby="tab-assistant-btn">
+                <div class="search-card">
+                    <label for="user-query-input" class="search-label">আপনার সমস্যা বা প্রশ্ন বাংলায় বা ইংরেজিতে লিখুন</label>
+                    <div class="input-wrapper">
+                        <textarea id="user-query-input" class="query-textarea" placeholder="উদাহরণ: amar biral ke ekjon marse tar bepare ami ki korte pari? অথবা 'আমি বন্ধুকে ৫ লাখ টাকা দিয়েছি ফেরত দিচ্ছে না'..." rows="3"></textarea>
+                        <button id="submit-query-btn" class="search-btn">
+                            <span class="btn-text">আইন দেখুন</span>
+                            <span class="spinner hidden" aria-hidden="true"></span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Query Chips -->
+                    <div class="chips-container">
+                        <span class="chips-label">সাধারণ প্রশ্নসমূহ:</span>
+                        <button class="chip-btn" data-query="amar biral ke ekjon marse tar bepare ami ki korte pari?">🐱 বিড়াল/পোষা প্রাণীকে আঘাত (ধারা ৪২৮)</button>
+                        <button class="chip-btn" data-query="amar tk churi hoia gese toh ami ki korbo?">💰 টাকা চুরি হয়েছে (ধারা ৩৭৯)</button>
+                        <button class="chip-btn" data-query="আমি বন্ধুকে ৫ লাখ টাকা দিয়েছি, ফেরত দিচ্ছে না">🤝 পাওনা টাকা আত্মসাৎ (ধারা ৪২০)</button>
+                        <button class="chip-btn" data-query="বেতন না পেলে কী করব?">💼 বকেয়া বেতন (শ্রম আইন ১২০)</button>
+                        <button class="chip-btn" data-query="চেক ডিজঅনার হলে কী হয়?">🏦 চেক বাউন্স (এনআই অ্যাক্ট ১৩৮)</button>
+                    </div>
+                </div>
+
+                <!-- Results Accordion Area -->
+                <div id="results-area" class="results-area hidden">
+                    <div class="result-status-header">
+                        <span class="status-pill success">✅ আইনি বিশ্লেষণ প্রস্তুত</span>
+                        <h2 class="result-title">আপনার পরিস্থিতি অনুযায়ী আইনি বিশ্লেষণ</h2>
+                    </div>
+
+                    <div id="accordions-container" class="accordions-container">
+                        <!-- Accordion Items Rendered Dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: Law Explorer -->
+            <section id="tab-explorer" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-explorer-btn">
+                <div class="explorer-card">
+                    <h2>বাংলাদেশের অফিশিয়াল আইন ও কোডিফিকেশনসমূহ</h2>
+                    <p class="explorer-desc">bdlaws.minlaw.gov.bd পোর্টাল থেকে সরাসরি ইনজেস্টকৃত আইনের তালিকা ও ধারা সংকলন।</p>
+                    
+                    <div id="laws-list-container" class="laws-list-container">
+                        <div class="loading-state">আইনের তালিকা লোড হচ্ছে...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>⚠️ <strong>আইনি সতর্কবার্তা:</strong> এই প্ল্যাটফর্মের তথ্য সাধারণ আইনি জ্ঞান ও বোঝাপড়ার উদ্দেশ্যে প্রদান করা হয়েছে। এটি কোনো আনুষ্ঠানিক আইনি পরামর্শ (Legal Advice) নয়। নির্দিষ্ট প্রতিকারের জন্য বাংলাদেশ বার কাউন্সিলের নিবন্ধিত আইনজীবীর সহায়তা নিন।</p>
+        </footer>
+    </div>
+
+    <!-- Frontend Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const queryInput = document.getElementById('user-query-input');
+            const submitBtn = document.getElementById('submit-query-btn');
+            const resultsArea = document.getElementById('results-area');
+            const accordionsContainer = document.getElementById('accordions-container');
+            const chipBtns = document.querySelectorAll('.chip-btn');
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // Tab Switching Logic
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    tabBtns.forEach(b => {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-selected', 'false');
+                    });
+                    tabContents.forEach(c => c.classList.add('hidden'));
+
+                    btn.classList.add('active');
+                    btn.setAttribute('aria-selected', 'true');
+                    const targetId = btn.getAttribute('aria-controls');
+                    document.getElementById(targetId).classList.remove('hidden');
+
+                    if (targetId === 'tab-explorer') {
+                        loadLawsList();
+                    }
+                });
+            });
+
+            // Quick Chips
+            chipBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    queryInput.value = btn.getAttribute('data-query');
+                    executeSearch();
+                });
+            });
+
+            // Submit Button Click
+            submitBtn.addEventListener('click', executeSearch);
+
+            // Keyboard Enter Shift+Enter Handler
+            queryInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    executeSearch();
+                }
+            });
+
+            async function executeSearch() {
+                const query = queryInput.value.trim();
+                if (!query) return;
+
+                submitBtn.disabled = true;
+                submitBtn.querySelector('.btn-text').textContent = 'বিশ্লেষণ হচ্ছে...';
+
+                try {
+                    const response = await fetch('/api/ask', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: query })
+                    });
+
+                    const data = await response.json();
+                    renderResults(data);
+                } catch (err) {
+                    alert('নেটওয়ার্ক বা সার্ভার সমস্যা দেখা দিয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('.btn-text').textContent = 'আইন দেখুন';
+                }
+            }
+
+            function renderResults(data) {
+                resultsArea.classList.remove('hidden');
+                accordionsContainer.innerHTML = '';
+
+                const sections = data.sections || [];
+                sections.forEach((item, index) => {
+                    const accDiv = document.createElement('div');
+                    accDiv.className = `accordion-item ${item.open ? 'open' : ''}`;
+                    
+                    const header = document.createElement('button');
+                    header.className = 'accordion-header';
+                    header.setAttribute('aria-expanded', item.open ? 'true' : 'false');
+                    header.innerHTML = `
+                        <div class="accordion-title-group">
+                            <span class="accordion-number">${item.id}</span>
+                            <span class="accordion-title">${item.title}</span>
+                        </div>
+                        <span class="accordion-chevron" aria-hidden="true">▼</span>
+                    `;
+
+                    const body = document.createElement('div');
+                    body.className = `accordion-body ${item.open ? '' : 'hidden'}`;
+                    body.innerHTML = item.html;
+
+                    header.addEventListener('click', () => {
+                        const isOpen = !body.classList.contains('hidden');
+                        body.classList.toggle('hidden', isOpen);
+                        header.setAttribute('aria-expanded', !isOpen);
+                        accDiv.classList.toggle('open', !isOpen);
+                    });
+
+                    accDiv.appendChild(header);
+                    accDiv.appendChild(body);
+                    accordionsContainer.appendChild(accDiv);
+                });
+
+                resultsArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            async function loadLawsList() {
+                const container = document.getElementById('laws-list-container');
+                try {
+                    const res = await fetch('/api/laws');
+                    const data = await res.json();
+                    const acts = data.acts || [];
+                    
+                    let html = '<div class="laws-grid">';
+                    acts.forEach(act => {
+                        html += `
+                            <div class="law-card">
+                                <h3>${act.act_name_bn}</h3>
+                                <p class="law-en">${act.act_name_en}</p>
+                                <span class="law-badge">ধারা ${act.section_number}</span>
+                                <p class="law-desc">${act.section_title_bn}</p>
+                                <a href="${act.source_url}" target="_blank" class="law-link">অফিশিয়াল bdlaws দেখুন →</a>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                } catch (e) {
+                    container.innerHTML = '<p>আইনের তালিকা লোড করা সম্ভব হয়নি।</p>';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
