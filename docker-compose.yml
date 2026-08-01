@@ -10,8 +10,9 @@ services:
       POSTGRES_DB: lawyer_db
       POSTGRES_USER: lawyer_user
       POSTGRES_PASSWORD: lawyer_pass
+    # Map internal 5432 to host 5433 to avoid collision with pre-existing host PostgreSQL
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
@@ -21,7 +22,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # 2. FastAPI Web Application Service (Groq Llama 3.1 70B Enabled)
+  # 2. FastAPI Web Application Service (Groq Llama 3.3 70B Enabled)
   web:
     build: .
     container_name: lawyer_web_app
@@ -37,7 +38,7 @@ services:
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - LLM_PROVIDER=${LLM_PROVIDER:-llama_groq}
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./storage:/app/storage
     depends_on:
