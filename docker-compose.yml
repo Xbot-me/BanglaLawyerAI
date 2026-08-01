@@ -10,7 +10,6 @@ services:
       POSTGRES_DB: lawyer_db
       POSTGRES_USER: lawyer_user
       POSTGRES_PASSWORD: lawyer_pass
-    # Map internal 5432 to host 5433 to avoid collision with pre-existing host PostgreSQL
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
@@ -21,8 +20,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - default
 
-  # 2. FastAPI Web Application Service (Groq Llama 3.3 70B Enabled)
+  # 2. FastAPI Web Application Service (Connected to Central Caddy Proxy Network)
   web:
     build: .
     container_name: lawyer_web_app
@@ -44,23 +45,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
-  # 3. Caddy Reverse Proxy (Auto-SSL, Gzip, Port 80/443)
-  caddy:
-    image: caddy:2.7-alpine
-    container_name: lawyer_caddy_proxy
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - web
+    networks:
+      - default
+      - proxy
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:
+
+networks:
+  default:
+  proxy:
+    external: true
