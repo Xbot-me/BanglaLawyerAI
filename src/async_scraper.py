@@ -54,13 +54,13 @@ class ProductionAsyncScraper:
                 })
         return acts
 
-    async def scrape_act_sections(self, session, act: dict):
+    async def scrape_act_sections(self, session, act: dict, idx: int, total: int):
         act_id = act["act_id"]
         act_url = act["url"]
         act_dir = os.path.join(BASE_RAW_DIR, f"act_{act_id}")
         os.makedirs(act_dir, exist_ok=True)
 
-        logger.info(f"Scraping Act #{act_id}: {act['title']}...")
+        logger.info(f"[{idx}/{total}] Scraping Act #{act_id}: {act['title']}...")
         html = await self.fetch_page(session, act_url)
         if not html:
             return
@@ -76,6 +76,7 @@ class ProductionAsyncScraper:
                 sec_links.append({"sec_num": sec_num, "url": full_sec_url})
 
         # Process each section
+        saved_count = 0
         for sec in sec_links:
             sec_num = sec["sec_num"]
             sec_url = sec["url"]
@@ -115,6 +116,7 @@ class ProductionAsyncScraper:
             }
 
             self.scraped_sections.append(sec_record)
+            saved_count += 1
             
             # Upsert into PostgreSQL if database is active
             upsert_section(
@@ -130,13 +132,14 @@ class ProductionAsyncScraper:
                 easy_exp_bn=easy_exp_bn,
                 url=sec_url
             )
+            
+        logger.info(f"Successfully scraped & inserted {saved_count} sections for Act #{act_id} into PostgreSQL!")
 
-    async def run_full_pipeline(self, limit_acts: int = 5):
+    async def run_full_pipeline(self, limit_acts: int = None):
         logger.info("Initializing Live Async Scraper for bdlaws.minlaw.gov.bd...")
         init_db()
 
         async with aiohttp.ClientSession() as session:
-            # Try multiple portal index URLs
             target_urls = [
                 f"{BDLAWS_BASE_URL}/laws-of-bangladesh.html",
                 f"{BDLAWS_BASE_URL}/act-list-all.html",
@@ -161,15 +164,17 @@ class ProductionAsyncScraper:
                 ]
 
             target_acts = acts[:limit_acts] if limit_acts else acts
-            tasks = [self.scrape_act_sections(session, act) for act in target_acts]
+            total_acts = len(target_acts)
+            
+            tasks = [self.scrape_act_sections(session, act, i+1, total_acts) for i, act in enumerate(target_acts)]
             await asyncio.gather(*tasks)
 
         # Write accumulated sections to JSON database
         if self.scraped_sections:
             with open(PROCESSED_JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump(self.scraped_sections, f, ensure_ascii=False, indent=2)
-            logger.info(f"Saved {len(self.scraped_sections)} scraped sections to {PROCESSED_JSON_PATH}")
+            logger.info(f"Saved total {len(self.scraped_sections)} scraped sections to {PROCESSED_JSON_PATH}")
 
 if __name__ == "__main__":
     scraper = ProductionAsyncScraper(max_concurrent=5)
-    asyncio.run(scraper.run_full_pipeline(limit_acts=2))
+    asyncio.run(scraper.run_full_pipeline(limit_acts=None))
