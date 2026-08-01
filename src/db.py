@@ -86,5 +86,34 @@ def upsert_section(act_id: int, act_name_en: str, act_name_bn: str, category: st
         conn.close()
     return False
 
+def get_all_sections_from_db(limit: int = 100, offset: int = 0) -> list:
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    s.act_id, 
+                    COALESCE(a.act_name_bn, s.section_title_bn) AS act_name_bn, 
+                    COALESCE(a.act_name_en, s.section_title_en) AS act_name_en, 
+                    s.section_number, 
+                    s.section_title_bn, 
+                    s.section_title_en, 
+                    s.content_bn,
+                    s.source_url
+                FROM sections s 
+                LEFT JOIN acts a ON s.act_id = a.act_id 
+                ORDER BY s.id DESC 
+                LIMIT %s OFFSET %s;
+            """, (limit, offset))
+            rows = cur.fetchall()
+            return list(rows)
+    except Exception as e:
+        logger.error(f"Error fetching sections from PostgreSQL: {e}")
+    finally:
+        conn.close()
+    return []
+
 if __name__ == "__main__":
     init_db()

@@ -16,6 +16,7 @@ if os.path.exists(".env"):
 
 from src.retriever import HybridRetriever
 from src.llm_explainer import LLMBengaliExplainer
+from src.db import get_all_sections_from_db
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -54,8 +55,11 @@ def process_legal_query(req: LegalQueryRequest):
     return explanation
 
 @app.get("/api/laws")
-def get_all_laws():
-    return {"acts": retriever.indexer.documents}
+def get_all_laws(limit: int = 100, offset: int = 0):
+    db_sections = get_all_sections_from_db(limit=limit, offset=offset)
+    if db_sections:
+        return {"acts": db_sections, "source": "postgresql", "count": len(db_sections)}
+    return {"acts": retriever.indexer.documents, "source": "json_seed", "count": len(retriever.indexer.documents)}
 
 @app.get("/", response_class=HTMLResponse)
 def serve_index():
