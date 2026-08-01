@@ -22,7 +22,7 @@ HEADERS = {
 }
 
 class ProductionAsyncScraper:
-    def __init__(self, max_concurrent: int = 10):
+    def __init__(self, max_concurrent: int = 5):
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.scraped_sections = []
         os.makedirs(BASE_RAW_DIR, exist_ok=True)
@@ -32,11 +32,11 @@ class ProductionAsyncScraper:
         async with self.semaphore:
             try:
                 clean_url = urljoin(BDLAWS_BASE_URL, url)
-                async with session.get(clean_url, headers=HEADERS, timeout=12) as response:
+                async with session.get(clean_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=8)) as response:
                     if response.status == 200:
                         return await response.text()
             except Exception as e:
-                logger.warning(f"Error fetching {url}: {e}")
+                logger.debug(f"Timeout/Error fetching {url}: {e}")
             return ""
 
     def parse_chronological_index(self, html_content: str) -> list:
@@ -49,16 +49,15 @@ class ProductionAsyncScraper:
             if m:
                 act_id = int(m.group(1))
                 title = link.get_text(strip=True)
-                if not title or len(title) < 3 or title in seen_act_ids:
+                if not title or len(title) < 3 or act_id in seen_act_ids:
                     continue
-                if act_id not in seen_act_ids:
-                    seen_act_ids.add(act_id)
-                    full_url = urljoin(BDLAWS_BASE_URL, href)
-                    acts.append({
-                        "act_id": act_id,
-                        "title": title,
-                        "url": full_url
-                    })
+                seen_act_ids.add(act_id)
+                full_url = urljoin(BDLAWS_BASE_URL, href)
+                acts.append({
+                    "act_id": act_id,
+                    "title": title,
+                    "url": full_url
+                })
         return acts
 
     async def scrape_act_sections(self, session, act: dict, idx: int, total: int):
@@ -67,9 +66,9 @@ class ProductionAsyncScraper:
         act_dir = os.path.join(BASE_RAW_DIR, f"act_{act_id}")
         os.makedirs(act_dir, exist_ok=True)
 
-        logger.info(f"[{idx}/{total}] Scraping Act #{act_id}: {act['title']}...")
         html = await self.fetch_page(session, act_url)
         if not html:
+            logger.warning(f"[{idx}/{total}] Act #{act_id} ({act['title'][:30]}) page unreachable, skipping.")
             return
 
         soup = BeautifulSoup(html, "html.parser")
@@ -86,10 +85,10 @@ class ProductionAsyncScraper:
         unique_sec_links = list({sec["url"]: sec for sec in sec_links}.values())
 
         if not unique_sec_links:
-            logger.info(f"Act #{act_id} has 0 section links.")
+            logger.info(f"[{idx}/{total}] Act #{act_id} ({act['title'][:30]}) has 0 section links.")
             return
 
-        # Process each section
+        # Process each section with real-time progress logging
         saved_count = 0
         for sec in unique_sec_links:
             sec_id = sec["sec_id"]
@@ -147,9 +146,9 @@ class ProductionAsyncScraper:
                 url=sec_url
             )
             
-        logger.info(f"Successfully scraped & inserted {saved_count} sections for Act #{act_id} into PostgreSQL!")
+        logger.info(f"[{idx}/{total}] Saved {saved_count} sections for Act #{act_id} ({act['title'][:30]}) -> Total in DB: {len(self.scraped_sections)}")
 
-    async def run_full_pipeline(self, limit_acts: int = None):
+    async def run_full_pipeline(self, limit_acts: int = None, batch_size: int = 5):
         logger.info("Initializing Live Async Scraper for bdlaws.minlaw.gov.bd...")
         init_db()
 
@@ -173,8 +172,11 @@ class ProductionAsyncScraper:
             target_acts = acts[:limit_acts] if limit_acts else acts
             total_acts = len(target_acts)
             
-            tasks = [self.scrape_act_sections(session, act, i+1, total_acts) for i, act in enumerate(target_acts)]
-            await asyncio.gather(*tasks)
+            # Batch execution so government server never hangs or drops connections
+            for i in range(0, total_acts, batch_size):
+                batch = target_acts[i:i+batch_size]
+                tasks = [self.scrape_act_sections(session, act, i+j+1, total_acts) for j, act in enumerate(batch)]
+                await asyncio.gather(*tasks)
 
         # Write accumulated sections to JSON database
         if self.scraped_sections:
@@ -184,4 +186,4 @@ class ProductionAsyncScraper:
 
 if __name__ == "__main__":
     scraper = ProductionAsyncScraper(max_concurrent=5)
-    asyncio.run(scraper.run_full_pipeline(limit_acts=None))
+    asyncio.run(scraper.run_full_pipeline(limit_acts=None, batch_size=5))
