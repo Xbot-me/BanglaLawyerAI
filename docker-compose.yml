@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL 16 Database with pgvector Extension
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: lawyer_postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: lawyer_db
+      POSTGRES_USER: lawyer_user
+      POSTGRES_PASSWORD: lawyer_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lawyer_user -d lawyer_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. FastAPI Web Application Service (Groq Llama 3.1 70B Enabled)
+  web:
+    build: .
+    container_name: lawyer_web_app
+    restart: always
+    env_file:
+      - .env.example
+    environment:
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=lawyer_db
+      - POSTGRES_USER=lawyer_user
+      - POSTGRES_PASSWORD=lawyer_pass
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LLM_PROVIDER=${LLM_PROVIDER:-llama_groq}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Caddy Reverse Proxy (Auto-SSL, Gzip, Port 80/443)
+  caddy:
+    image: caddy:2.7-alpine
+    container_name: lawyer_caddy_proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

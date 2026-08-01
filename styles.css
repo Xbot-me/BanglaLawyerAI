@@ -1,0 +1,538 @@
+/* Bangladesh Legal Assistant — Modern & Accessible Design System */
+:root {
+  --primary-color: #006a4e;
+  --primary-dark: #004d38;
+  --primary-light: #e6f2ed;
+  --accent-red: #f42a41;
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --text-dark: #0f172a;
+  --text-muted: #64748b;
+  --border-color: #cbd5e1;
+  --warning-bg: #fffbeb;
+  --warning-border: #f59e0b;
+  --success-bg: #ecfdf5;
+  --success-border: #10b981;
+  --font-family: 'Noto Sans Bengali', 'Hind Siliguri', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: 1.85;
+  padding-bottom: 40px;
+}
+
+/* Accessibility Skip Link */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+.app-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 36px 24px;
+  text-align: center;
+  border-radius: 0 0 20px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+
+.header-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.92;
+}
+
+/* Tab Bar */
+.tab-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: white;
+  padding: 6px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid var(--border-color);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 12px 18px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-dark);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,106,78,0.2);
+}
+
+/* Search Section */
+.search-section {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 24px -4px rgba(0,0,0,0.06);
+  border: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.search-label {
+  display: block;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: var(--text-dark);
+}
+
+.search-box {
+  display: flex;
+  gap: 12px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 14px 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.search-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0 28px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Quick Questions */
+.quick-questions {
+  margin-bottom: 24px;
+}
+
+.quick-label {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  color: var(--text-dark);
+}
+
+.chip:hover {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Answer Card & Accordion Sections */
+.answer-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 10px 30px -5px rgba(0,0,0,0.06);
+  border: 1px solid var(--border-color);
+}
+
+.answer-header {
+  margin-bottom: 24px;
+}
+
+.answer-badge {
+  display: inline-block;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.answer-title {
+  font-size: 1.5rem;
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.section {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  background: white;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8fafc;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.section-header:hover {
+  background: #f1f5f9;
+}
+
+.section-number {
+  width: 32px;
+  height: 32px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin-right: 14px;
+  flex-shrink: 0;
+}
+
+.section-title-text {
+  flex: 1;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: var(--text-dark);
+}
+
+.section-chevron {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  transition: transform 0.3s;
+}
+
+.section-chevron.open {
+  transform: rotate(180deg);
+}
+
+.section-body {
+  display: none;
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+  background: white;
+}
+
+.section-body.open {
+  display: block;
+}
+
+/* Law Quote & Source */
+.law-quote {
+  background: #f8fafc;
+  border-left: 4px solid var(--primary-color);
+  padding: 16px 20px;
+  border-radius: 0 8px 8px 0;
+  font-size: 1rem;
+  margin-bottom: 14px;
+}
+
+.source-link {
+  display: inline-block;
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: none;
+  margin-top: 8px;
+}
+
+.source-link:hover {
+  text-decoration: underline;
+}
+
+/* Highlights & Examples */
+.highlight-box {
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin: 16px 0;
+  color: #92400e;
+}
+
+.example-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.example-label {
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-bottom: 6px;
+}
+
+/* Evidence Matrix */
+.evidence-category {
+  margin-bottom: 18px;
+}
+
+.evidence-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.evidence-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.evidence-dot.strong { background: #10b981; }
+.evidence-dot.support { background: #f59e0b; }
+
+.evidence-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.evidence-list {
+  padding-left: 24px;
+}
+
+.evidence-list li {
+  margin-bottom: 6px;
+}
+
+/* Step Flow */
+.step-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #f8fafc;
+  padding: 14px 18px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.step-text {
+  font-size: 1rem;
+}
+
+/* Court Precedents */
+.case-card {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 18px 22px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+}
+
+.case-badge {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.case-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-top: 6px;
+
+}
+
+.case-meta {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.case-quote {
+  font-style: italic;
+  background: white;
+  padding: 12px 16px;
+  border-left: 3px solid var(--primary-color);
+  border-radius: 4px;
+}
+
+/* Strength Bar */
+.strength-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.strength-strong { background: #10b981; }
+.strength-weak { background: #f42a41; }
+
+.strength-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.warning-box {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  padding: 18px 22px;
+  border-radius: 12px;
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.warning-title {
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.warning-list {
+  padding-left: 20px;
+  color: #7f1d1d;
+}
+
+/* Disclaimer & Footer */
+.disclaimer {
+  margin-top: 24px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: #92400e;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.loader {
+  display: none;
+  text-align: center;
+  padding: 35px;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+}
+
+/* Responsive Mobile Layout */
+@media (max-width: 640px) {
+  .search-box {
+    flex-direction: column;
+  }
+  
+  .search-btn {
+    padding: 14px;
+  }
+  
+  .header-title {
+    font-size: 1.8rem;
+  }
+
+  .answer-card {
+    padding: 20px 16px;
+  }
+
+  .section-header {
+    padding: 14px 16px;
+  }
+}

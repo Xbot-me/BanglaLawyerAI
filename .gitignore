@@ -1,0 +1,34 @@
+# Secrets & Environment Variables (NEVER COMMIT API KEYS)
+.env
+.env.local
+.env.*.local
+
+# Python Bytecode & Cache Files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Data & Scraped Files (Populated live by database/scraper)
+storage/raw/
+storage/processed/
+pgdata/
+*.sqlite3
+*.db
+
+# macOS & OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs & Text Editors
+.vscode/
+.idea/
+*.swp
+*.swo

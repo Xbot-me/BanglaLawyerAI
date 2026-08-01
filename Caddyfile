@@ -1,0 +1,32 @@
+# Production Caddyfile for send.mustafizur.info
+{
+    email admin@mustafizur.info
+}
+
+# Subdomain endpoint with Automatic Let's Encrypt SSL/HTTPS
+send.mustafizur.info {
+    # Encode responses with Zstd & Gzip compression
+    encode zstd gzip
+
+    # Static Assets Caching
+    @static {
+        path *.css *.js *.ico *.png *.svg
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Security Headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Reverse proxy to FastAPI web app container
+    reverse_proxy web:8000 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
