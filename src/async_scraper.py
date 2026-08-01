@@ -41,11 +41,20 @@ class ProductionAsyncScraper:
                 async with session.get(clean_url, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=8)) as response:
                     if response.status == 200:
                         raw_bytes = await response.read()
-                        # bdlaws' HTTP header claims charset=UTF-16, but the page's own
-                        # <meta charset="utf-8"> and actual byte content are UTF-8. Trusting
-                        # the header (as aiohttp's .text() does by default) corrupts every
-                        # non-ASCII (i.e. every Bengali) character. Decode explicitly instead.
-                        return raw_bytes.decode("utf-8", errors="replace")
+                        # bdlaws' HTTP header always claims charset=UTF-16, but that's not
+                        # reliably true: some pages (large index/listing pages) really are
+                        # UTF-16 with a BOM; others (individual section pages) are actually
+                        # UTF-8 despite the header. Sniff the real encoding from the byte
+                        # stream itself rather than trusting the header either way.
+                        if raw_bytes.startswith(b'\xfe\xff') or raw_bytes.startswith(b'\xff\xfe'):
+                            return raw_bytes.decode("utf-16", errors="replace")
+                        elif raw_bytes.startswith(b'\xef\xbb\xbf'):
+                            return raw_bytes.decode("utf-8-sig", errors="replace")
+                        else:
+                            try:
+                                return raw_bytes.decode("utf-8")
+                            except UnicodeDecodeError:
+                                return raw_bytes.decode("utf-16", errors="replace")
             except Exception as e:
                 logger.debug(f"Timeout/Error fetching {url}: {e}")
             return ""
