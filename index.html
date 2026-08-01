@@ -228,7 +228,7 @@
                             <div class="law-card">
                                 <h3>${act.act_name_bn}</h3>
                                 <p class="law-en">${act.act_name_en}</p>
-                                <span class="law-badge">ধারা ${act.section_number}</span>
+                                <span class="law-badge">${/^\\d/.test(act.section_number) ? 'ধারা ' + act.section_number : act.section_number}</span>
                                 <p class="law-desc">${act.section_title_bn}</p>
                                 <a href="${act.source_url}" target="_blank" class="law-link">অফিশিয়াল bdlaws দেখুন →</a>
                             </div>

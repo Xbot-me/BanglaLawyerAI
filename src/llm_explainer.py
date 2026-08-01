@@ -237,10 +237,15 @@ class LLMBengaliExplainer:
         url = doc["source_url"]
         content_bn = doc["content_bn"]
 
+        def format_sec(sn: str) -> str:
+            return f"ধারা {sn}" if sn and sn[0].isdigit() else sn
+
+        sec_formatted = format_sec(sec_num)
+
         sec1_html = f"""<div class="law-quote">
           "{content_bn}"
           <br><br>
-          <strong>{act_bn} — ধারা {sec_num} ({title_bn})</strong>
+          <strong>{act_bn} — {sec_formatted} ({title_bn})</strong>
         </div>
         <a href="{url}" class="source-link" target="_blank" rel="noopener noreferrer">
           সরকারি অফিশিয়াল উৎস দেখুন (bdlaws.minlaw.gov.bd) →
@@ -264,11 +269,11 @@ class LLMBengaliExplainer:
         ex_html, ev_html, st_html = self._get_dynamic_content_for_section(doc)
 
         sec3_html = f"""<div style="background:#fef3c7; border:1px solid #f59e0b; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; color:#92400e;">
-          ⚠️ <strong>সাধারণ নির্দেশনা:</strong> নিচের পরিস্থিতিগুলো {act_bn}-এর {sec_num} ধারা সহজভাবে বোঝার সুবিধার্থে তৈরি করা হয়েছে।
+          ⚠️ <strong>সাধারণ নির্দেশনা:</strong> নিচের পরিস্থিতিগুলো {act_bn}-এর {sec_formatted} সহজভাবে বোঝার সুবিধার্থে তৈরি করা হয়েছে।
         </div>{ex_html}"""
 
         sec4_html = f"""<div style="background:#fef3c7; border:1px solid #f59e0b; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; color:#92400e;">
-          ⚠️ <strong>সাধারণ নির্দেশিকা:</strong> {act_bn}-এর {sec_num} ধারায় প্রয়োজনীয় প্রমাণের তালিকা।
+          ⚠️ <strong>সাধারণ নির্দেশিকা:</strong> {act_bn}-এর {sec_formatted}-এ প্রয়োজনীয় প্রমাণের তালিকা।
         </div>{ev_html}"""
 
         sec5_html = f"""<div style="background:#fef3c7; border:1px solid #f59e0b; padding:10px 14px; border-radius:8px; margin-bottom:14px; font-size:0.9rem; color:#92400e;">
@@ -278,8 +283,8 @@ class LLMBengaliExplainer:
         sections = [
             {"id": 1, "title": "আসল আইনটি কী বলে?", "open": False, "html": sec1_html},
             {"id": 2, "title": "সহজ বাংলায় বুঝুন (Groq Llama 3.3 70B)", "open": True, "html": sec2_html},
-            {"id": 3, "title": f"বাস্তব উদাহরণ ({act_bn} — ধারা {sec_num})", "open": False, "html": sec3_html},
-            {"id": 4, "title": f"কী প্রমাণ লাগবে? (ধারা {sec_num}-এর জন্য)", "open": False, "html": sec4_html},
+            {"id": 3, "title": f"বাস্তব উদাহরণ ({act_bn} — {sec_formatted})", "open": False, "html": sec3_html},
+            {"id": 4, "title": f"কী প্রমাণ লাগবে? ({sec_formatted}-এর জন্য)", "open": False, "html": sec4_html},
             {"id": 5, "title": "কী করবেন? — ধাপে ধাপে (সাধারণ পদক্ষেপ)", "open": False, "html": sec5_html}
         ]
 

@@ -143,7 +143,10 @@ class ProductionAsyncScraper:
                 real_sec_num = m.group(1)
                 content_bn = m.group(2).strip()
             else:
-                real_sec_num = sec_id  # fallback only if the expected pattern isn't found
+                # If regex fails to match a section number, this is likely a Preamble, Part, or Chapter introduction.
+                # Use the Title as the 'section_number' so it doesn't get saved as a weird URL ID (e.g. 34407).
+                # Fallback to 'sec_id' only if even title_bn is missing.
+                real_sec_num = title_bn if title_bn else sec_id
                 content_bn = raw_content
 
             chapter_no_el = sec_soup.find("p", class_="act-chapter-no")
