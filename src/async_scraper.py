@@ -227,4 +227,4 @@ class ProductionAsyncScraper:
 
 if __name__ == "__main__":
     scraper = ProductionAsyncScraper(max_concurrent=5)
-    asyncio.run(scraper.run_full_pipeline(limit_acts=30, batch_size=5))
+    asyncio.run(scraper.run_full_pipeline(limit_acts=None, batch_size=5))

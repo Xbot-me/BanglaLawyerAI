@@ -4,6 +4,7 @@ import math
 import logging
 import numpy as np
 from rank_bm25 import BM25Okapi
+from src.db import get_all_sections_for_indexing
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
@@ -11,19 +12,15 @@ logger = logging.getLogger(__name__)
 PROCESSED_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "storage", "processed"))
 EMBEDDINGS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "storage", "embeddings"))
 
-# General question stopwords to exclude from BM25 scoring so generic terms like 'আইন' or 'ধারা' don't cause false hits
 BENGALI_STOPWORDS = {
-    "আইন", "কী", "কি", "বলে", "বলুন", "বলেন", "কোন", "ধারায়", "ধারায়", "ধারা", "মামলা", "হয়", "হয়", 
-    "করা", "করায়", "করালে", "হলে", "হল", "যায়", "যায়", "জন্য", "থাকে", "থাকলে", "কোনটি", "কীভাবে",
+    "আইন", "কী", "কি", "বলে", "বলুন", "বলেন", "কোন", "ধারায়", "ধারায়", "ধারা", "মামলা", "হয়", "হয়", 
+    "করা", "করায়", "করালে", "হলে", "হল", "যায়", "যায়", "জন্য", "থাকে", "থাকলে", "কোনটি", "কীভাবে",
     "কেমন", "এর", "এবং", "বা", "বাস্তব", "সম্পর্কে", "সম্পর্কিত", "বিবরণ", "অধীনে", "অধীন",
     "law", "section", "act", "under", "what", "which", "is", "are", "the", "for", "in", "of"
 }
 
+
 class PurePythonNgramVectorizer:
-    """
-    Pure Python + NumPy Multilingual Character & Word N-gram Vectorizer.
-    Provides semantic cosine similarity across Bengali and English without native lib dependencies.
-    """
     def __init__(self, ngram_range=(2, 4)):
         self.ngram_range = ngram_range
         self.vocab = {}
@@ -37,9 +34,7 @@ class PurePythonNgramVectorizer:
             clean_word = word.strip(".,;:!?()[]{}'\"")
             if not clean_word or clean_word in BENGALI_STOPWORDS:
                 continue
-            # Word token
             ngrams.append(f"w_{clean_word}")
-            # Character ngrams for subword matching (captures Bengali word inflections)
             padded = f"^{clean_word}$"
             for n in range(self.ngram_range[0], self.ngram_range[1] + 1):
                 for i in range(len(padded) - n + 1):
@@ -56,18 +51,18 @@ class PurePythonNgramVectorizer:
         doc_ngrams_list = [self._get_ngrams(text) for text in corpus_texts]
         df = {}
         N = len(corpus_texts)
-        
+
         for doc_ngrams in doc_ngrams_list:
             unique_ngrams = set(doc_ngrams)
             for ng in unique_ngrams:
                 df[ng] = df.get(ng, 0) + 1
-                
+
         self.vocab = {ng: idx for idx, ng in enumerate(sorted(df.keys()))}
         self.idf = {ng: math.log((N + 1) / (df[ng] + 1)) + 1.0 for ng in df}
-        
+
         vocab_size = max(len(self.vocab), 1)
         vectors = np.zeros((N, vocab_size), dtype=np.float32)
-        
+
         for d_idx, doc_ngrams in enumerate(doc_ngrams_list):
             counts = {}
             for ng in doc_ngrams:
@@ -76,7 +71,7 @@ class PurePythonNgramVectorizer:
                 if ng in self.vocab:
                     v_idx = self.vocab[ng]
                     vectors[d_idx, v_idx] = count * self.idf[ng]
-                    
+
         norms = np.linalg.norm(vectors, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
         self.doc_vectors = vectors / norms
@@ -96,11 +91,12 @@ class PurePythonNgramVectorizer:
             if ng in self.vocab:
                 v_idx = self.vocab[ng]
                 vec[0, v_idx] = count * self.idf[ng]
-                
+
         norm = np.linalg.norm(vec)
         if norm > 0:
             vec = vec / norm
         return vec
+
 
 class LegalIndexer:
     def __init__(self):
@@ -111,11 +107,25 @@ class LegalIndexer:
         self.embedding_model = None
 
     def load_documents(self, json_path=None):
+        """
+        Load documents for the search index. Tries Postgres first (the real,
+        continuously-scraped dataset); falls back to the local JSON seed file
+        only if the DB is empty or unreachable, so the platform still works
+        during initial setup or if the DB connection is down.
+        """
+        db_documents = get_all_sections_for_indexing()
+        if db_documents:
+            self.documents = db_documents
+            logger.info(f"Loaded {len(self.documents)} documents from PostgreSQL for indexing.")
+            return self.documents
+
+        logger.warning("PostgreSQL returned no documents (empty or unreachable). Falling back to local JSON seed.")
+
         if json_path is None:
             json_path = os.path.join(PROCESSED_DIR, "sections.json")
 
         if not os.path.exists(json_path):
-            logger.warning(f"File {json_path} not found. Bootstrapping initial section seed dataset...")
+            logger.warning(f"File {json_path} not found either. Bootstrapping initial section seed dataset...")
             try:
                 from src.scraper import fetch_and_preserve_raw
                 from src.parser import parse_raw_documents
@@ -126,25 +136,25 @@ class LegalIndexer:
                 logger.error(f"Error bootstrapping section seed dataset: {e}")
                 self.documents = []
                 return self.documents
-            
+
         try:
             with open(json_path, "r", encoding="utf-8") as f:
                 self.documents = json.load(f)
         except Exception as e:
             logger.error(f"Error loading {json_path}: {e}")
             self.documents = []
-            
-        logger.info(f"Loaded {len(self.documents)} documents for indexing.")
+
+        logger.info(f"Loaded {len(self.documents)} documents from local JSON seed for indexing.")
         return self.documents
 
     def _tokenize(self, text, remove_stopwords=True):
         bengali_digits = "০১২৩৪৫৬৭৮৯"
         english_digits = "0123456789"
         trans_table = str.maketrans(bengali_digits, english_digits)
-        
+
         normalized_text = text.translate(trans_table).lower()
         raw_tokens = [t.strip(".,;:!?()[]{}'\"") for t in normalized_text.split() if t.strip(".,;:!?()[]{}'\"")]
-        
+
         if remove_stopwords:
             tokens = [t for t in raw_tokens if t not in BENGALI_STOPWORDS]
             return tokens if tokens else raw_tokens
@@ -157,10 +167,10 @@ class LegalIndexer:
             return
 
         for doc in self.documents:
-            text = f"{doc['section_number']} धारा {doc['section_number']} {doc['section_title_bn']} {doc['section_title_en']} {doc['content_bn']} {doc['content_en']} {' '.join(doc.get('keywords', []))}"
+            text = f"{doc['section_number']} ধারা {doc['section_number']} {doc['section_title_bn']} {doc['section_title_en']} {doc['content_bn']} {doc['content_en']} {' '.join(doc.get('keywords', []))}"
             tokens = self._tokenize(text, remove_stopwords=True)
             corpus_tokens.append(tokens)
-            
+
         self.bm25 = BM25Okapi(corpus_tokens)
         logger.info("BM25 keyword index constructed successfully.")
 
@@ -178,6 +188,7 @@ class LegalIndexer:
         self.load_documents(json_path)
         self.build_bm25_index()
         self.build_vector_index()
+
 
 if __name__ == "__main__":
     indexer = LegalIndexer()

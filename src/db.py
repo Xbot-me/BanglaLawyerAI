@@ -13,13 +13,13 @@ DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "lawyer_pass")
 
 CONN_STRING = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Try importing psycopg for PostgreSQL connection
 psycopg = None
 try:
     import psycopg
     from psycopg.rows import dict_row
 except ImportError:
     logger.info("psycopg module not found. Operating in local JSON fallback mode.")
+
 
 def get_db_connection():
     if not psycopg:
@@ -30,6 +30,7 @@ def get_db_connection():
     except Exception as e:
         logger.warning(f"Could not connect to PostgreSQL ({e}). Operating in JSON file fallback mode.")
         return None
+
 
 def init_db():
     conn = get_db_connection()
@@ -50,9 +51,10 @@ def init_db():
         conn.close()
     return False
 
-def upsert_section(act_id: int, act_name_en: str, act_name_bn: str, category: str, 
-                   sec_num: str, title_en: str, title_bn: str, content_en: str, 
-                   content_bn: str, easy_exp_bn: str, url: str):
+
+def upsert_section(act_id: int, act_name_en: str, act_name_bn: str, category: str,
+                    sec_num: str, title_en: str, title_bn: str, content_en: str,
+                    content_bn: str, easy_exp_bn: str, url: str):
     conn = get_db_connection()
     if not conn:
         return False
@@ -77,7 +79,7 @@ def upsert_section(act_id: int, act_name_en: str, act_name_bn: str, category: st
                     content_bn = EXCLUDED.content_bn,
                     easy_explanation_bn = EXCLUDED.easy_explanation_bn;
             """, (act_id, sec_num, title_en, title_bn, content_en, content_bn, easy_exp_bn, url))
-            
+
             conn.commit()
             return True
     except Exception as e:
@@ -86,7 +88,12 @@ def upsert_section(act_id: int, act_name_en: str, act_name_bn: str, category: st
         conn.close()
     return False
 
+
 def get_all_sections_from_db(limit: int = 100, offset: int = 0) -> list:
+    """
+    Paginated fetch for API display (e.g. /api/laws). Not intended for building
+    the search index - use get_all_sections_for_indexing() for that.
+    """
     conn = get_db_connection()
     if not conn:
         return []
@@ -114,6 +121,68 @@ def get_all_sections_from_db(limit: int = 100, offset: int = 0) -> list:
     finally:
         conn.close()
     return []
+
+
+def get_all_sections_for_indexing() -> list:
+    """
+    Fetch every section from Postgres with all fields the indexer/retriever/
+    explainer need, in the same document-dict shape the JSON seed file used.
+    No row limit - this feeds the search index build, not paginated API display.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    s.act_id,
+                    COALESCE(a.act_name_bn, s.section_title_bn) AS act_name_bn,
+                    COALESCE(a.act_name_en, s.section_title_en) AS act_name_en,
+                    COALESCE(a.category, 'General Law') AS category,
+                    s.chapter_number,
+                    s.chapter_title,
+                    s.section_number,
+                    s.section_title_en,
+                    s.section_title_bn,
+                    s.content_en,
+                    s.content_bn,
+                    s.easy_explanation_bn,
+                    s.keywords,
+                    s.source_url
+                FROM sections s
+                LEFT JOIN acts a ON s.act_id = a.act_id
+                ORDER BY s.id ASC;
+            """)
+            rows = cur.fetchall()
+            documents = []
+            for row in rows:
+                documents.append({
+                    "act_id": row["act_id"],
+                    "act_name_en": row["act_name_en"] or "",
+                    "act_name_bn": row["act_name_bn"] or "",
+                    "category": row["category"] or "General Law",
+                    "chapter_number": row.get("chapter_number") or "",
+                    "chapter_title": row.get("chapter_title") or "",
+                    "section_number": str(row["section_number"]),
+                    "section_title_en": row["section_title_en"] or "",
+                    "section_title_bn": row["section_title_bn"] or "",
+                    "content_en": row["content_en"] or row["content_bn"] or "",
+                    "content_bn": row["content_bn"] or "",
+                    "easy_explanation_bn": row["easy_explanation_bn"] or "",
+                    "keywords": row["keywords"] or [],
+                    "related_sections": [],
+                    "source_url": row["source_url"] or "",
+                    "past_court_cases": [],
+                })
+            logger.info(f"Loaded {len(documents)} sections from PostgreSQL for indexing.")
+            return documents
+    except Exception as e:
+        logger.error(f"Error fetching sections for indexing from PostgreSQL: {e}")
+    finally:
+        conn.close()
+    return []
+
 
 if __name__ == "__main__":
     init_db()
