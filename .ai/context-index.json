@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-02T12:32:15Z",
+  "git_head": "0b407302834f6e79aa0e6cd7e9279c49177bdf62",
+  "token_estimate_method": "tiktoken_cl100k_base",
+  "token_estimate_params": {
+    "python": 3.95,
+    "js": 3.7,
+    "ts": 3.75,
+    "php": 3.9,
+    "go": 3.85,
+    "bash": 4.1,
+    "sql": 4.0,
+    "default": 3.9,
+    "max_file_bytes": 300000,
+    "max_file_loc": 8000
+  },
+  "repo_snapshot": {
+    "file_count": 13,
+    "total_bytes": 101654,
+    "total_tokens": 30413
+  },
+  "scan_fingerprint": "17daf5cec94384be46b9f948eef4078b8616ae425e4b2495fc224ceab4510354",
+  "stack": [
+    "Docker",
+    "Docker Compose",
+    "Python (pip)"
+  ],
+  "file_count": 13,
+  "total_tokens": 30413,
+  "top_50_tokens": 30413,
+  "top_files": [
+    {
+      "path": "src/scraper.py",
+      "score": 0.04492,
+      "fan_in": 4,
+      "lang": "python",
+      "loc": 282,
+      "tokens": 9607
+    },
+    {
+      "path": "src/db.py",
+      "score": 0.03348,
+      "fan_in": 3,
+      "lang": "python",
+      "loc": 188,
+      "tokens": 1551
+    },
+    {
+      "path": "src/indexer.py",
+      "score": 0.03129,
+      "fan_in": 3,
+      "lang": "python",
+      "loc": 196,
+      "tokens": 2043
+    },
+    {
+      "path": "src/parser.py",
+      "score": 0.02428,
+      "fan_in": 3,
+      "lang": "python",
+      "loc": 58,
+      "tokens": 590
+    },
+    {
+      "path": "src/llm_explainer.py",
+      "score": 0.01868,
+      "fan_in": 3,
+      "lang": "python",
+      "loc": 292,
+      "tokens": 6660
+    },
+    {
+      "path": "src/retriever.py",
+      "score": 0.01868,
+      "fan_in": 3,
+      "lang": "python",
+      "loc": 161,
+      "tokens": 2404
+    },
+    {
+      "path": "src/evaluator.py",
+      "score": 0.01317,
+      "fan_in": 1,
+      "lang": "python",
+      "loc": 167,
+      "tokens": 1949
+    },
+    {
+      "path": "src/async_scraper.py",
+      "score": 0.01154,
+      "fan_in": 0,
+      "lang": "python",
+      "loc": 233,
+      "tokens": 2576
+    },
+    {
+      "path": "app.py",
+      "score": 0.01154,
+      "fan_in": 0,
+      "lang": "python",
+      "loc": 82,
+      "tokens": 684
+    },
+    {
+      "path": "run_pipeline.py",
+      "score": 0.01154,
+      "fan_in": 0,
+      "lang": "python",
+      "loc": 67,
+      "tokens": 639
+    },
+    {
+      "path": "src/full_ingestion.py",
+      "score": 0.01154,
+      "fan_in": 0,
+      "lang": "python",
+      "loc": 63,
+      "tokens": 1293
+    },
+    {
+      "path": "schema.sql",
+      "score": 0.01154,
+      "fan_in": 0,
+      "lang": "sql",
+      "loc": 46,
+      "tokens": 396
+    },
+    {
+      "path": "src/__init__.py",
+      "score": 0.01154,
+      "fan_in": 0,
+      "lang": "python",
+      "loc": 5,
+      "tokens": 21
+    }
+  ]
+}

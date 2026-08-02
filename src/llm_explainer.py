@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 import json
 import requests
@@ -40,18 +41,26 @@ class LLMBengaliExplainer:
                 "Content-Type": "application/json"
             }
             system_prompt = (
-                "You are an expert Bangladesh Legal Assistant. Your task is to explain the provided statutory law text "
-                "in simple, complete, conversational, empathetic Bengali for an ordinary citizen. "
-                "CRITICAL RULES: Always finish your sentences completely. Do NOT cut off mid-sentence. "
-                "Do NOT invent fake court case names or legal precedents. Do NOT generate arbitrary win percentage scores. "
-                "Base your response ONLY on the provided ground-truth statutory law text."
+                "You are an expert Bangladesh Legal Assistant. Explain the provided statutory law text "
+                "in simple, complete, conversational, empathetic Bengali for an ordinary citizen.\n"
+                "CRITICAL RULES:\n"
+                "1. Always finish your sentences completely. Do NOT cut off mid-sentence.\n"
+                "2. Do NOT invent fake court case names, legal precedents, or win percentages.\n"
+                "3. Base your response ONLY on the provided ground-truth statutory law text.\n"
+                "4. If the provided section does NOT actually answer the user's question (e.g. the section is about "
+                "appointing an Inspector-General but the user asks about police assault), you MUST say clearly "
+                "in Bengali that this section is not relevant to the question and advise consulting a registered lawyer "
+                "or the official bdlaws portal. Do NOT force an irrelevant section to fit the query.\n"
+                "5. When the section IS relevant, explain rights and practical next steps simply."
             )
             user_prompt = (
                 f"আইনের নাম: {act_bn}\n"
                 f"ধারা নম্বর: {sec_num}\n"
                 f"অফিশিয়াল আইনের হুবহু টেক্সট: \"{content_bn}\"\n\n"
                 f"ব্যবহারকারীর প্রশ্ন: \"{query}\"\n\n"
-                f"অনুগ্রহ করে উপরের অফিশিয়াল আইনের ভিত্তিতে ব্যবহারকারীর প্রশ্নের একটি সংক্ষিপ্ত, স্পষ্ট, ও সম্পূর্ণ বাংলা ব্যাখ্যা দিন। বাক্যটি পূর্ণাঙ্গভাবে শেষ করুন।"
+                f"উপরের অফিশিয়াল আইনটি ব্যবহারকারীর প্রশ্নের সাথে প্রাসঙ্গিক কিনা বিচার করুন। "
+                f"প্রাসঙ্গিক হলে সংক্ষিপ্ত, স্পষ্ট, সম্পূর্ণ বাংলায় ব্যাখ্যা দিন এবং কী করা যায় তা বলুন। "
+                f"প্রাসঙ্গিক না হলে স্পষ্ট করে বলুন যে এই ধারাটি প্রশ্নের উত্তর নয়। বাক্য পূর্ণাঙ্গভাবে শেষ করুন।"
             )
             
             for model_name in [GROQ_MODEL, "llama-3.3-70b-versatile", "llama3-70b-8192", "llama-3.1-8b-instant"]:
@@ -81,6 +90,45 @@ class LLMBengaliExplainer:
             logger.warning(f"Groq Llama API call failed ({e}). Falling back to ground-truth engine.")
         return ""
 
+    def _is_section_relevant(self, query: str, doc: dict, rrf_score: float) -> bool:
+        """Heuristic relevance guard: reject clearly mismatched top hits."""
+        q = (query or "").lower()
+        title = f"{doc.get('section_title_en', '')} {doc.get('section_title_bn', '')}".lower()
+        content = f"{doc.get('content_en', '')} {doc.get('content_bn', '')}".lower()
+        sec = str(doc.get("section_number", "")).lower()
+        kws = " ".join(doc.get("keywords") or []).lower()
+
+        # Hard reject: pure administrative Police Act appointment sections for assault queries
+        police_assault_signals = [
+            "police", "pulish", "পুলিশ", "ojotha", "marse", "marche", "beating",
+            "assault", "মারধর", "আঘাত", "নির্যাতন", "torture", "amare mar"
+        ]
+        admin_markers = [
+            "inspector-general", "inspector general", "appointing persons to exercise",
+            "appoint some person to exercise", "2b", "general police-district"
+        ]
+        if any(s in q for s in police_assault_signals):
+            if any(m in title or m in content or m in kws for m in admin_markers):
+                logger.warning(f"Relevance guard rejected admin section {sec} for assault query.")
+                return False
+            # Prefer hurt / torture sections
+            if sec in {"323", "324", "325", "326", "323-325+torture"}:
+                return True
+
+        # Very weak score → not relevant
+        if rrf_score < 0.15:
+            return False
+
+        # Basic token overlap with title/keywords/content
+        q_tokens = set(t for t in re.findall(r"\b\w+\b", q) if len(t) > 2)
+        doc_tokens = set(t for t in re.findall(r"\b\w+\b", title + " " + kws + " " + content[:500]) if len(t) > 2)
+        if not q_tokens:
+            return True
+        overlap = q_tokens & doc_tokens
+        if len(overlap) == 0 and rrf_score < 0.35:
+            return False
+        return True
+
     def explain(self, query: str, retrieval_result: dict) -> dict:
         is_low_conf = retrieval_result.get("is_low_confidence", False)
         matches = retrieval_result.get("top_matches", [])
@@ -95,8 +143,25 @@ class LLMBengaliExplainer:
                 "sections": self._build_low_confidence_sections(query)
             }
 
-        # 2. Ground-Truth Legal Document Analysis
-        primary_match = matches[0]["document"]
+        # 2. Relevance guard — pick first relevant match, else low-confidence
+        primary_match = None
+        primary_score = 0.0
+        for m in matches:
+            doc = m["document"]
+            score = float(m.get("rrf_score", 0))
+            if self._is_section_relevant(query, doc, score):
+                primary_match = doc
+                primary_score = score
+                break
+
+        if primary_match is None:
+            logger.warning("No relevant section after relevance guard — returning LOW_CONFIDENCE.")
+            return {
+                "query": query,
+                "status": "LOW_CONFIDENCE",
+                "max_confidence_score": max_score,
+                "sections": self._build_low_confidence_sections(query)
+            }
 
         # 3. Call Groq Llama 3.3 70B API
         api_key = os.getenv("GROQ_API_KEY") or GROQ_API_KEY
@@ -110,12 +175,12 @@ class LLMBengaliExplainer:
             )
 
         sections = self._build_dynamic_sections(query, primary_match, llama_output)
-        
+
         return {
             "query": query,
             "status": "SUCCESS",
             "provider_used": "Groq Llama 3.3 70B Cloud API" if llama_output else "Ground-Truth Verified Engine",
-            "max_confidence_score": max_score,
+            "max_confidence_score": primary_score or max_score,
             "sections": sections
         }
 
@@ -148,7 +213,31 @@ class LLMBengaliExplainer:
         act_id = doc.get("act_id")
         sec_num = str(doc.get("section_number"))
 
-        if sec_num == "428":
+        if sec_num in ("323", "324", "325", "323-325+Torture", "323-325+torture"):
+            ex_html = """<div class="example-item">
+              <div class="example-label">পরিস্থিতি ১ — পুলিশ বা অন্য কারো অযথা মারধর (ধারা ৩২৩/৩২৪/৩২৫)</div>
+              <p class="example-text">পুলিশ বা কোনো ব্যক্তি যদি অযথা (ojotha) আপনাকে মারধর করে, লাঠিচার্জ করে বা হেফাজতে নির্যাতন করে — এটি বেআইনি। দণ্ডবিধির ৩২৩ (সাধারণ আঘাত), ৩২৪ (বিপজ্জনক অস্ত্র), ৩২৫ (গুরুতর আঘাত) এবং নির্যাতন আইন ২০১৩ প্রযোজ্য হতে পারে।</p>
+            </div>"""
+
+            ev_html = """<div class="evidence-category">
+              <div class="evidence-header"><div class="evidence-dot strong" aria-hidden="true"></div><div class="evidence-title">প্রাথমিক শক্ত প্রমাণ (Primary Evidence)</div></div>
+              <ul class="evidence-list">
+                <li><strong>মেডিকেল সার্টিফিকেট / সুরতহাল রিপোর্ট:</strong> সরকারি হাসপাতালের ডাক্তারি প্রমাণ</li>
+                <li><strong>CCTV / মোবাইল ভিডিও / প্রত্যক্ষদর্শী:</strong> ঘটনার সরাসরি প্রমাণ</li>
+                <li><strong>আঘাতের ছবি ও পোশাক:</strong> শারীরিক আঘাতের দৃশ্যমান প্রমাণ</li>
+              </ul>
+            </div>"""
+
+            st_html = """<div class="step-flow">
+              <div class="step-item"><div class="step-circle" aria-hidden="true">১</div><div class="step-text"><strong>তাৎক্ষণিক সরকারি হাসপাতালে সুরতহাল / মেডিকেল সার্টিফিকেট করান</strong></div></div>
+              <div class="step-item"><div class="step-circle" aria-hidden="true">২</div><div class="step-text"><strong>নিকটস্থ থানায় এজাহার/জিডি দায়ের করুন; না নিলে ম্যাজিস্ট্রেট আদালতে সরাসরি অভিযোগ করুন</strong></div></div>
+              <div class="step-item"><div class="step-circle" aria-hidden="true">৩</div><div class="step-text"><strong>জেলা পুলিশ সুপার (SP) / কমিশনার বরাবর লিখিত অভিযোগ দিন</strong></div></div>
+              <div class="step-item"><div class="step-circle" aria-hidden="true">৪</div><div class="step-text"><strong>জাতীয় মানবাধিকার কমিশন (NHRC) এবং রেজিস্টার্ড আইনজীবীর সহায়তা নিন</strong></div></div>
+            </div>"""
+
+            return ex_html, ev_html, st_html
+
+        elif sec_num == "428":
             ex_html = """<div class="example-item">
               <div class="example-label">পরিস্থিতি ১ — পশু হত্যা বা নির্যাতন (ধারা ৪২৮) প্রযোজ্য হওয়ার সম্ভাবনা</div>
               <p class="example-text">কেউ যদি অন্যায়ভাবে আপনার পোষা বিড়াল, কুকুর বা অন্য কোনো প্রাণীকে বিষপ্রয়োগে বা পিটিয়ে হত্যা করে বা পঙ্গু বানায়।</p>

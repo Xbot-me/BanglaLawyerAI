@@ -76,7 +76,7 @@ SEEDED_SECTIONS = [
         "content_en": """Whoever commits mischief by killing, poisoning, maiming or rendering useless any animal or animals... shall be punished with imprisonment of either description for a term which may extend to two years, or with fine, or with both.""",
         "content_bn": """যে ব্যক্তি কোনো পশু বা পোষা প্রাণীকে (যেমন বিড়াল, কুকুর, গবাদিপশু) অন্যায়ভাবে হত্যা করে, বিষপ্রয়োগ করে, পঙ্গু করে বা মারাত্মক আঘাত করে ক্ষতিসাধন করে, সে ব্যক্তি যেকোনো মেয়াদের সশ্রম বা বিনাশ্রম কারাদণ্ডে—যার মেয়াদ দুই বছর পর্যন্ত হতে পারে—অথবা অর্থদণ্ডে, অথবা উভয় দণ্ডে দণ্ডিত হবে। (পশু কল্যাণ আইন, ২০১৯ অনুযায়ীও প্রতিকার রয়েছে)।""",
         "easy_explanation_bn": "কেউ যদি অন্যায়ভাবে আপনার পোষা বিড়াল, কুকুর বা অন্য কোনো প্রাণীকে হত্যা করে, বিষ দেয় বা আঘাত করে পঙ্গু বানায়, তবে এটি দণ্ডবিধির ৪২৮ ধারা এবং পশু কল্যাণ আইন ২০১৯ অনুযায়ী অপরাধ। অপরাধীর ২ বছর পর্যন্ত কারাদণ্ড বা জরিমানা হতে পারে।",
-        "keywords": ["section 428", "biral", "cat", "kutta", "dog", "pet", "animal killing", "marse", "biral ke marse", "পশু হত্যা", "বিড়াল মারছে", "ধারা ৪২৮", "পশু নির্যাতন", "428"],
+        "keywords": ["section 428", "biral", "cat", "kutta", "dog", "pet", "animal killing", "biral ke marse", "পশু হত্যা", "বিড়াল মারছে", "ধারা ৪২৮", "পশু নির্যাতন", "428", "animal assault"],
         "related_sections": ["429", "425"],
         "elements_of_offence": [
             "১. প্রাণীটিকে কি অন্যায়ভাবে হত্যা, বিষপ্রয়োগ বা আঘাত করা হয়েছিল?",
@@ -227,6 +227,159 @@ SEEDED_SECTIONS = [
         "evidence_matrix": {"strong_evidence": [], "supporting_evidence": []},
         "police_questions": [],
         "procedure_steps": [],
+        "past_court_cases": [],
+        "case_strength": {}
+    },
+
+    # 9. Penal Code Section 323 - Punishment for voluntarily causing hurt
+    {
+        "act_id": 11,
+        "act_name_en": "The Penal Code, 1860",
+        "act_name_bn": "দণ্ডবিধি, ১৮৬০",
+        "category": "Criminal Law (ফৌজদারি আইন)",
+        "section_number": "323",
+        "section_title_en": "Punishment for voluntarily causing hurt",
+        "section_title_bn": "স্বেচ্ছায় আঘাত (Hurt) করার দণ্ড — সাধারণ মারধর",
+        "chapter_number": "XVI",
+        "chapter_title": "Of Offences Affecting the Human Body",
+        "domain": "Criminal Law",
+        "source_url": "http://bdlaws.minlaw.gov.bd/act-11/section-3216.html",
+        "content_en": """Whoever, except in the case provided for by section 334, voluntarily causes hurt, shall be punished with imprisonment of either description for a term which may extend to one year, or with fine which may extend to one thousand taka, or with both.""",
+        "content_bn": """যে ব্যক্তি (ধারা ৩৩৪-এর ক্ষেত্র ছাড়া) স্বেচ্ছায় কাউকে আঘাত (Hurt) করে, সে ব্যক্তি যেকোনো মেয়াদের সশ্রম বা বিনাশ্রম কারাদণ্ডে—যার মেয়াদ এক বছর পর্যন্ত হতে পারে—অথবা এক হাজার টাকা পর্যন্ত অর্থদণ্ডে, অথবা উভয় দণ্ডে দণ্ডিত হবে।""",
+        "easy_explanation_bn": "কেউ যদি ইচ্ছাকৃতভাবে আপনাকে মারধর করে বা শারীরিক আঘাত করে (যেমন চড়, ঘুষি, লাথি), তবে এটি দণ্ডবিধির ৩২৩ ধারার অপরাধ। পুলিশ কর্মকর্তাও যদি অযথা বা অতিরিক্ত শক্তি প্রয়োগ করে আঘাত করে, তাহলে একই ধারায় মামলা করা যায়। শাস্তি সর্বোচ্চ ১ বছরের কারাদণ্ড বা জরিমানা।",
+        "keywords": [
+            "section 323", "voluntarily causing hurt", "assault", "beating", "maramari",
+            "police assault", "police marse", "ojotha marse", "পুলিশ মারধর", "মারধর",
+            "আঘাত", "ধারা ৩২৩", "323", "hurt", "marse", "police beating", "physical assault",
+            "পুলিশ আমারে মারসে", "অযথা মারধর", "শারীরিক নির্যাতন"
+        ],
+        "related_sections": ["319", "321", "324", "325"],
+        "elements_of_offence": [
+            "১. অভিযুক্ত ব্যক্তি কি স্বেচ্ছায় (intentionally) আঘাত করেছিল?",
+            "২. শিকারের শরীরে কি ব্যথা, ফোলা, কাটা বা অন্য কোনো আঘাতের চিহ্ন ছিল?"
+        ],
+        "evidence_matrix": {
+            "strong_evidence": [
+                {"name": "মেডিকেল সার্টিফিকেট / সুরতহাল রিপোর্ট", "details": "ডাক্তার কর্তৃক আঘাতের প্রমাণ", "value": "আঘাতের অকাট্য প্রমাণ"},
+                {"name": "CCTV / মোবাইল ভিডিও / প্রত্যক্ষদর্শী", "details": "ঘটনার সরাসরি প্রমাণ", "value": "অভিযুক্তের পরিচয় ও কাজ"}
+            ],
+            "supporting_evidence": [
+                {"name": "ঘটনার জিডি / এজাহার কপি"},
+                {"name": "আঘাতের ছবি / পোশাকের দাগ"}
+            ]
+        },
+        "police_questions": [],
+        "procedure_steps": [
+            "নিকটস্থ হাসপাতাল বা সরকারি ডাক্তারের কাছ থেকে সুরতহাল / মেডিকেল সার্টিফিকেট নিন",
+            "ঘটনার ভিডিও, ছবি বা সাক্ষীর নাম ঠিকানা সংরক্ষণ করুন",
+            "নিকটস্থ থানায় এজাহার / জিডি দায়ের করুন অথবা সরাসরি ম্যাজিস্ট্রেট আদালতে অভিযোগ করুন",
+            "পুলিশ কর্মকর্তার বিরুদ্ধে হলে উচ্চতর কর্তৃপক্ষ (SP/DIG) এবং মানবাধিকার কমিশনেও অভিযোগ দিন"
+        ],
+        "past_court_cases": [],
+        "case_strength": {}
+    },
+
+    # 10. Penal Code Section 324 - Voluntarily causing hurt by dangerous weapons
+    {
+        "act_id": 11,
+        "act_name_en": "The Penal Code, 1860",
+        "act_name_bn": "দণ্ডবিধি, ১৮৬০",
+        "category": "Criminal Law (ফৌজদারি আইন)",
+        "section_number": "324",
+        "section_title_en": "Voluntarily causing hurt by dangerous weapons or means",
+        "section_title_bn": "বিপজ্জনক অস্ত্র বা উপায়ে স্বেচ্ছায় আঘাত করার দণ্ড",
+        "chapter_number": "XVI",
+        "chapter_title": "Of Offences Affecting the Human Body",
+        "domain": "Criminal Law",
+        "source_url": "http://bdlaws.minlaw.gov.bd/act-11/section-3217.html",
+        "content_en": """Whoever, except in the case provided for by section 334, voluntarily causes hurt by means of any instrument for shooting, stabbing or cutting, or any instrument which, used as a weapon of offence, is likely to cause death, or by means of fire or any heated substance, or by means of any poison or any corrosive substance, or by means of any explosive substance, or by means of any substance which it is deleterious to the human body to inhale, to swallow, or to receive into the blood, or by means of any animal, shall be punished with imprisonment of either description for a term which may extend to three years, or with fine, or with both.""",
+        "content_bn": """যে ব্যক্তি (ধারা ৩৩৪-এর ক্ষেত্র ছাড়া) গুলি, ছুরি, কাটার যন্ত্র বা মৃত্যু ঘটানোর সম্ভাবনাযুক্ত অস্ত্র, আগুন, বিষ, ক্ষয়কারক পদার্থ, বিস্ফোরক বা অন্য কোনো বিপজ্জনক উপায়ে স্বেচ্ছায় কাউকে আঘাত করে, সে ব্যক্তি তিন বছর পর্যন্ত কারাদণ্ড বা অর্থদণ্ড বা উভয় দণ্ডে দণ্ডিত হবে।""",
+        "easy_explanation_bn": "যদি কেউ লাঠি, ছুরি, ব্যাটন, আগ্নেয়াস্ত্র বা অন্য কোনো বিপজ্জনক অস্ত্র দিয়ে আপনাকে আঘাত করে, তবে এটি ৩২৪ ধারার অপরাধ। পুলিশ যদি অপ্রয়োজনীয়ভাবে লাঠিচার্জ বা অতিরিক্ত বল প্রয়োগ করে গুরুতর আঘাত করে, তাহলেও এই ধারা প্রযোজ্য হতে পারে। শাস্তি সর্বোচ্চ ৩ বছর।",
+        "keywords": [
+            "section 324", "dangerous weapons", "hurt by weapon", "lathi charge", "baton",
+            "পুলিশ লাঠিচার্জ", "বিপজ্জনক অস্ত্র", "ধারা ৩২৪", "324", "weapon assault",
+            "গুরুতর আঘাত", "লাঠি দিয়ে মারধর"
+        ],
+        "related_sections": ["323", "325", "326"],
+        "elements_of_offence": [],
+        "evidence_matrix": {"strong_evidence": [], "supporting_evidence": []},
+        "police_questions": [],
+        "procedure_steps": [],
+        "past_court_cases": [],
+        "case_strength": {}
+    },
+
+    # 11. Penal Code Section 325 - Punishment for voluntarily causing grievous hurt
+    {
+        "act_id": 11,
+        "act_name_en": "The Penal Code, 1860",
+        "act_name_bn": "দণ্ডবিধি, ১৮৬০",
+        "category": "Criminal Law (ফৌজদারি আইন)",
+        "section_number": "325",
+        "section_title_en": "Punishment for voluntarily causing grievous hurt",
+        "section_title_bn": "স্বেচ্ছায় গুরুতর আঘাত (Grievous Hurt) করার দণ্ড",
+        "chapter_number": "XVI",
+        "chapter_title": "Of Offences Affecting the Human Body",
+        "domain": "Criminal Law",
+        "source_url": "http://bdlaws.minlaw.gov.bd/act-11/section-3219.html",
+        "content_en": """Whoever, except in the case provided for by section 335, voluntarily causes grievous hurt, shall be punished with imprisonment of either description for a term which may extend to seven years, and shall also be liable to fine.""",
+        "content_bn": """যে ব্যক্তি (ধারা ৩৩৫-এর ক্ষেত্র ছাড়া) স্বেচ্ছায় গুরুতর আঘাত (Grievous Hurt) করে, সে ব্যক্তি সাত বছর পর্যন্ত কারাদণ্ডে দণ্ডিত হবে এবং অর্থদণ্ডেও দণ্ডনীয় হবে।""",
+        "easy_explanation_bn": "হাড় ভাঙা, স্থায়ী অঙ্গহানি, চোখ/কান নষ্ট হওয়া, বা ২০ দিনের বেশি বিপজ্জনক অবস্থায় রাখা — এগুলো গুরুতর আঘাত (Grievous Hurt)। পুলিশ বা অন্য কেউ যদি এমন আঘাত করে, তবে ৩২৫ ধারায় মামলা হয়। শাস্তি সর্বোচ্চ ৭ বছর কারাদণ্ড।",
+        "keywords": [
+            "section 325", "grievous hurt", "serious injury", "broken bone", "গুরুতর আঘাত",
+            "ধারা ৩২৫", "325", "fracture", "permanent injury", "পুলিশ গুরুতর মারধর"
+        ],
+        "related_sections": ["320", "323", "324", "326"],
+        "elements_of_offence": [],
+        "evidence_matrix": {"strong_evidence": [], "supporting_evidence": []},
+        "police_questions": [],
+        "procedure_steps": [],
+        "past_court_cases": [],
+        "case_strength": {}
+    },
+
+    # 12. Composite / guidance entry for Police assault & custodial violence remedies
+    {
+        "act_id": 11,
+        "act_name_en": "The Penal Code, 1860 & related laws",
+        "act_name_bn": "দণ্ডবিধি, ১৮৬০ ও সংশ্লিষ্ট আইন",
+        "category": "Criminal Law (ফৌজদারি আইন) — Police Accountability",
+        "section_number": "323-325+Torture",
+        "section_title_en": "Remedies against police assault / custodial torture",
+        "section_title_bn": "পুলিশ কর্তৃক অযথা মারধর বা হেফাজতে নির্যাতনের প্রতিকার",
+        "chapter_number": "XVI",
+        "chapter_title": "Of Offences Affecting the Human Body + Human Rights",
+        "domain": "Criminal Law / Human Rights",
+        "source_url": "http://bdlaws.minlaw.gov.bd/act-11.html",
+        "content_en": """Police officers have no legal authority to assault or torture any person. Voluntarily causing hurt is punishable under Penal Code sections 323, 324, 325. Torture and custodial death are additionally covered by the Torture and Custodial Death (Prevention) Act, 2013. Constitution Article 35(5) prohibits torture and cruel treatment. Victims may file FIR/GD, approach Magistrate, higher police authority, National Human Rights Commission, or seek compensation.""",
+        "content_bn": """পুলিশ কর্মকর্তার কোনো ব্যক্তিকে অযথা মারধর বা নির্যাতন করার আইনগত ক্ষমতা নেই। স্বেচ্ছায় আঘাত করা দণ্ডবিধির ৩২৩, ৩২৪, ৩২৫ ধারায় শাস্তিযোগ্য। হেফাজতে নির্যাতন ও মৃত্যুর জন্য নির্যাতন এবং হেফাজতে মৃত্যু (নিবারণ) আইন, ২০১৩ প্রযোজ্য। সংবিধানের ৩৫(৫) অনুচ্ছেদ নির্যাতন ও নিষ্ঠুর ব্যবহার নিষিদ্ধ করেছে। ভুক্তভোগী থানায় এজাহার/জিডি, ম্যাজিস্ট্রেট আদালত, উচ্চতর পুলিশ কর্তৃপক্ষ, জাতীয় মানবাধিকার কমিশন বা ক্ষতিপূরণের মামলা করতে পারেন।""",
+        "easy_explanation_bn": "পুলিশ আপনাকে অযথা (ojotha) মারধর করলে তা সম্পূর্ণ বেআইনি। আপনি (১) হাসপাতাল থেকে সুরতহাল নিন, (২) থানায় বা ম্যাজিস্ট্রেট আদালতে মামলা করুন, (৩) জেলা পুলিশ সুপার / মহানগর পুলিশ কমিশনারের কাছে লিখিত অভিযোগ দিন, (৪) জাতীয় মানবাধিকার কমিশনে অভিযোগ করতে পারেন। নির্যাতন আইন ২০১৩ অনুযায়ী হেফাজতে নির্যাতন আরও কঠোর শাস্তির অপরাধ।",
+        "keywords": [
+            "police assault", "police beating", "ojotha marse", "পুলিশ মারধর", "পুলিশ আমারে মারসে",
+            "custodial torture", "হেফাজতে নির্যাতন", "torture act 2013", "নির্যাতন আইন",
+            "police brutality", "অযথা মারধর", "পুলিশ নির্যাতন", "article 35", "মানবাধিকার",
+            "police marse", "amare marse", "what can i do police beat"
+        ],
+        "related_sections": ["323", "324", "325", "326"],
+        "elements_of_offence": [],
+        "evidence_matrix": {
+            "strong_evidence": [
+                {"name": "মেডিকেল সার্টিফিকেট / সুরতহাল", "details": "আঘাতের ডাক্তারি প্রমাণ", "value": "অপরিহার্য"},
+                {"name": "ভিডিও / সাক্ষী", "details": "ঘটনার প্রত্যক্ষ প্রমাণ", "value": "শক্তিশালী"}
+            ],
+            "supporting_evidence": [
+                {"name": "উচ্চতর কর্তৃপক্ষের কাছে দেওয়া অভিযোগের কপি"},
+                {"name": "মানবাধিকার কমিশনের অভিযোগ রসিদ"}
+            ]
+        },
+        "police_questions": [],
+        "procedure_steps": [
+            "তাৎক্ষণিকভাবে সরকারি হাসপাতালে গিয়ে সুরতহাল / মেডিকেল সার্টিফিকেট করান",
+            "ঘটনার ভিডিও, ছবি, সাক্ষীর তথ্য সংরক্ষণ করুন",
+            "নিকটস্থ থানায় এজাহার দায়ের করুন; থানা না নিলে ম্যাজিস্ট্রেট আদালতে সরাসরি অভিযোগ করুন",
+            "জেলা পুলিশ সুপার (SP) বা মহানগর পুলিশ কমিশনার বরাবর লিখিত অভিযোগ দিন",
+            "জাতীয় মানবাধিকার কমিশন (NHRC) এবং প্রয়োজনে আইনজীবীর সহায়তা নিন"
+        ],
         "past_court_cases": [],
         "case_strength": {}
     }

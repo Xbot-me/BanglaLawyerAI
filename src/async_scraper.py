@@ -170,7 +170,10 @@ class ProductionAsyncScraper:
                 "content_bn": content_bn,
                 "easy_explanation_bn": easy_exp_bn,
                 "source_url": sec_url,
-                "keywords": [str(real_sec_num), act["title"]],
+                "keywords": list(dict.fromkeys(
+                    [str(real_sec_num), act["title"]]
+                    + [t for t in re.findall(r"[\w\u0980-\u09FF]{3,}", (title_bn or "") + " " + (act.get("title") or ""))]
+                )),
                 "past_court_cases": []
             }
 
